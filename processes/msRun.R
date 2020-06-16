@@ -47,7 +47,8 @@ for(y in (nage+1):nySpinFit){
   for(s in 1:ns){
     
     # Calculate the run size ... check math
-    Run[y,,s] <- get_raa(R = R[,s], yIdx = y, pRet = pReturn)
+    # Run[y,,s] <- get_raa(R = R[,s], yIdx = y, pRet = pReturn)
+    Run[y,,s] <- rev(R[(y-nage):(y-1),s] * rev(pReturn))
     
     # Escapement-at-age and total escapement
     S[y,,s] <- Run[y,,s] * (1 - UTemp)
@@ -59,7 +60,7 @@ for(y in (nage+1):nySpinFit){
     
     # Recruits spawned in year y
     R[y,s] <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
-                     S = sum(S[y,,s]))
+                     S = Stot[y,s])
   } # close s
 } # close y
 
@@ -107,8 +108,9 @@ for(y in (nage+1):(nySpinFit-nage)){
 
 # Fit the assessment model
 
-#  something is up with the calcs ...
+#  something is up with the calcs ... oes probably
 plot(R_oe[,1] ~ Stot_oe[,1])
+plot(R[,1] ~ Stot[,1])
 
 x <- 1:2500
 y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
