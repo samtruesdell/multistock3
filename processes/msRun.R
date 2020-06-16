@@ -14,7 +14,7 @@ sapply(funLst, source)
 
 
 # Calculate some paramters
-nage <- ageMax
+nage <- length(pReturn)
 ns <- ns_high + ns_med + ns_low
 # Spin up n years before running the model
 nySpinFit <- nySpin + nyFit
@@ -84,23 +84,34 @@ for(y in (nage+1):nySpinFit){
     paa_oeNTemp <- c(rmultinom(n = 1, size = oe_paaS, prob = S[y,,s]))
     paa_oe[y,,s] <- paa_oeNTemp / sum(paa_oeNTemp)
   
-    } # close s
+  } # close s
 } # close y
 
+# Calculate the observed run size
+for(s in 1:ns){
+  runObs <- Stot_oe[,s] + Ctot_oe[,s]
+  runHat[,,s] <-  paa_oe[,,s] * runObs
+} # close s
 
+## Math needs to be checked here...........
+# Calculate the observed recruitment
 for(y in (nage+1):(nySpinFit-nage)){
   for(s in 1:ns){
-    Rhat[y,s] <- diag(paa_oe[y:(y+nage),,s]) %*% 
-      (Stot_oe[y:(y+nage),s] + Ctot_oe[y:(y+nage),s])
-  }
-}
+    
+    # Observed recruitment associated with year y is the sum of the diagonal 
+    # of the run-at-age for the next nage-1 years
+    R_oe[y,s] <-  sum(diag(runHat[y:(y+nage-1),,s]))
+
+  } # close s
+} # close y
 
 # Fit the assessment model
 
-R[y] <- diag(srdat$paaB_e[(y+4):(y+7),]) %*% # estimated PAA
-  (srdat$SB_e[(y+4):(y+7)] +           # sum of escapement and
-     srdat$HB_e[(y+4):(y+7)])          # catch is total recruits
+#  something is up with the calcs ...
+plot(R_oe[,1] ~ Stot_oe[,1])
 
-
-
+x <- 1:2500
+y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
+       S = x)
+plot(x,y)
 
