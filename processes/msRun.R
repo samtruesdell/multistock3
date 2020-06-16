@@ -46,7 +46,7 @@ for(y in (nage+1):nySpinFit){
   # Loop over stocks
   for(s in 1:ns){
     
-    # Calculate the run size
+    # Calculate the run size ... check math
     Run[y,,s] <- get_raa(R = R[,s], yIdx = y, pRet = pReturn)
     
     # Escapement-at-age and total escapement

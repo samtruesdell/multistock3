@@ -1,5 +1,6 @@
 
-
+# Function to calculate initial numbers based on equilibrium ricker
+# parameters
 
 get_initN <- function(alpha, beta){
   

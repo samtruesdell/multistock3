@@ -1,4 +1,5 @@
 
+# Ricker equation
 
 ricker <- function(alpha, beta, S){
   

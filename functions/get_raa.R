@@ -1,5 +1,8 @@
 
 
+# Function to calculate the run based on the recruitment at previous
+# ages
+
 
 
 get_raa <- function(R, yIdx, pRet){
