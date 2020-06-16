@@ -28,20 +28,20 @@ nySpin <- 50
 nyFit <- 30
 
 # Initial U
-initUMean <- 0.2
-initUSD <- 0.1
+initUMean <- 0.3
+initUSD <- 0.3
 
 # CVs for aerial surveys [1] and weirs [2] and ESS for weirs
 # and correlations btw aerial surveys and weirs
-cvAW <- c(1, 0.1)
+cvAW <- c(1, 0.01)
 
 
-oe_paaS <- 50
-oe_catch <- 0.1
-oe_S <- 0.1
+oe_paaS <- 200
+oe_catch <- 0.01
+oe_S <- 0.01
 
 # CV for the harvest of every stock
-cvH <- 0.2
+cvH <- 0.02
 
 # escapement goal scalars
 egscalar <- seq(from=0.01, to=2, length.out=5)
@@ -57,7 +57,6 @@ nrepGrid <- 100
 # number of years to use to fit SR model
 sryrs <- 30
 
-ageMin <- 4
-ageMax <- 7
+# Probability of return by age class
 pReturn = c(a1=0, a2=0, a3=0, a4=.2, a5=.39, a6=.38, a7=.03)
 
