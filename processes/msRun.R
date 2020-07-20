@@ -13,7 +13,7 @@ funLst <- list.files('functions', full.names = TRUE)
 sapply(funLst, source)
 
 
-# Calculate some paramters
+# Calculate some variables to use later
 nage <- length(pReturn)
 ns <- ns_high + ns_med + ns_low
 # Spin up n years before running the model
@@ -41,7 +41,7 @@ Ctot[1:nage,] <- 0
 for(y in (nage+1):nySpinFit){
   
   # Harvest rate for year y
-  UTemp <- rtnorm(1, mean = initUMean, sd = initUSD, lower = 0)
+  UTemp <- rtnorm(1, mean = initUMean, sd = initUSD, lower = 0, upper = 1)
   
   # Loop over stocks
   for(s in 1:ns){
@@ -61,6 +61,7 @@ for(y in (nage+1):nySpinFit){
     # Recruits spawned in year y
     R[y,s] <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
                      S = Stot[y,s])
+    
   } # close s
 } # close y
 
@@ -101,16 +102,22 @@ for(y in (nage+1):(nySpinFit-nage)){
     
     # Observed recruitment associated with year y is the sum of the diagonal 
     # of the run-at-age for the next nage-1 years
-    R_oe[y,s] <-  sum(diag(runHat[y:(y+nage-1),,s]))
+    R_oe[y,s] <-  sum(diag(runHat[(y + 1):(y + nage),,s]))
 
   } # close s
 } # close y
 
 # Fit the assessment model
 
-#  something is up with the calcs ... oes probably
+
+
+
+
+#  something is up with the calcs ... R_oe looks like
 plot(R_oe[,1] ~ Stot_oe[,1])
 plot(R[,1] ~ Stot[,1])
+plot(R[,1] ~ R_oe[,1])
+plot(Stot[,1] ~ Stot_oe[,1])
 
 x <- 1:2500
 y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
