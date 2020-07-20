@@ -108,7 +108,30 @@ for(y in (nage+1):(nySpinFit-nage)){
 } # close y
 
 # Fit the assessment model
-
+for(s in 1:ns){
+  
+  # Get the appropriate number of years used to fit the assessment model
+  # (from the end of the data set)
+  R_lm <- tail(R_oe[,s], sryrs)
+  S_lm <- tail(Stot_oe[,s], sryrs)
+  
+  # Calculate the parameters of the Ricker model
+  lnRS <- log(R_lm+1e-5) - log(S_lm+1e-5)
+  SRlm <- try(lm(lnRS ~ S_lm))
+  lRpar <- coef(SRlm)
+  abase <- lRpar[1]
+  bbase <- -lRpar[1] / lRpar[2]
+  
+  # get unbiased estimates (H&W p. 269)
+  sdR <- summary(SRlm)$sigma
+  aprime <- abase + sdR^2/2
+  bprime <- aprime / abase * bbase
+  Rpar <- c(aprime, bprime)
+  
+  # Calculate Smsy
+  Smsy <- Rpar[2] * (0.5 - 0.07 * Rpar[1])
+  
+}
 
 
 
