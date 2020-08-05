@@ -37,7 +37,7 @@ R[1:nage,] <- rep(N0, each = nage)
 Stot[1:nage,] <- 0
 Ctot[1:nage,] <- 0
 
-# Run a loop to get the true stock dynamics
+# Run a loop to spin up
 for(y in (nage+1):nySpinFit){
   
   # Harvest rate for year y
@@ -91,8 +91,7 @@ for(y in (nage+1):nySpinFit){
 
 # Calculate the observed run size
 for(s in 1:ns){
-  runObs <- Stot_oe[,s] + Ctot_oe[,s]
-  runHat[,,s] <-  paa_oe[,,s] * runObs
+  run_oe[,,s] <-  paa_oe[,,s] * (Stot_oe[,s] + Ctot_oe[,s])
 } # close s
 
 ## Math needs to be checked here...........
@@ -102,7 +101,7 @@ for(y in (nage+1):(nySpinFit-nage)){
     
     # Observed recruitment associated with year y is the sum of the diagonal 
     # of the run-at-age for the next nage-1 years
-    R_oe[y,s] <-  sum(diag(runHat[(y + 1):(y + nage),,s]))
+    R_oe[y,s] <-  sum(diag(run_oe[(y + 1):(y + nage),,s]))
 
   } # close s
 } # close y
@@ -121,6 +120,8 @@ for(s in 1:ns){
   lRpar <- coef(SRlm)
   abase <- lRpar[1]
   bbase <- -lRpar[1] / lRpar[2]
+  abase <- exp(lRpar[1])
+  bbase <- -lRpar[2]
   
   # get unbiased estimates (H&W p. 269)
   sdR <- summary(SRlm)$sigma
@@ -135,15 +136,15 @@ for(s in 1:ns){
 
 
 
-
-#  something is up with the calcs ... R_oe looks like
-plot(R_oe[,1] ~ Stot_oe[,1])
-plot(R[,1] ~ Stot[,1])
-plot(R[,1] ~ R_oe[,1])
-plot(Stot[,1] ~ Stot_oe[,1])
-
-x <- 1:2500
-y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
-       S = x)
-plot(x,y)
-
+# 
+# #  something is up with the calcs ... R_oe looks like
+# plot(R_lm ~ S_lm)
+# 
+# x <- 1:max(S_lm)
+# y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
+#        S = x)
+# yprime <- ricker(alpha = aprime, beta = bprime, 
+#                  S = x)
+# lines(x,y, col = 'red')
+# lines(x,yprime, col = 'blue')
+# 

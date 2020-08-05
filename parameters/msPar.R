@@ -37,8 +37,8 @@ cvAW <- c(1, 0.01)
 
 
 oe_paaS <- 200
-oe_catch <- 0.01
-oe_S <- 0.01
+oe_catch <- 0.1
+oe_S <- 0.1
 
 # CV for the harvest of every stock
 cvH <- 0.02
