@@ -19,6 +19,9 @@ ns <- ns_high + ns_med + ns_low
 # Spin up n years before running the model
 nySpinFit <- nySpin + nyFit
 
+# Get the stocks to sample ----- change to vary within loop --------
+stocks2sample <- 1:2
+
 # build the containers
 source('processes/get_arrays.R')
 
@@ -33,14 +36,42 @@ N[1:nage,1:nage,] <- sapply(N0, function(x) rep(x * pReturn, each = nage))
 # Get equilibrium initial recruitment
 R[1:nage,] <- rep(N0, each = nage)
 
-# Include zeros to avoid warning messages later
-Stot[1:nage,] <- 0
-Ctot[1:nage,] <- 0
+# Get equilibrium run
+for(s in 1:ns){
+  Run[1:nage,,s] <- rep(rev(R[1:(nage),s] * rev(pReturn)), each = nage)
+}
+
+
+# Initial escapement-at-age and total escapement (0.25 initial U)
+S[1:nage,,] <- Run[1:nage,,] * (1 - 0.25)
+Stot[1:nage,] <- apply(S[1:nage,,], c(1,3), sum)
+
+# Initial catch-at-age and total catch
+C[1:nage,,] <- Run[1:nage,,] * 0.25
+Ctot[1:nage,] <- apply(C[1:nage,,], c(1,3), sum)
+
+# Initial observed run size (no observation error...)
+run_oe[1:nage,,] <-  Run[1:nage,,]
+
+# Initial observed recruitment
+for(s in 1:ns){
+  R_oe[1:nage,s] <-  sum(diag(run_oe[(1:(nage)),,s]))
+}
+
+# Initial observed total stock size
+Stot_oe[1:nage,] <- Stot[1:nage,]
+
+
+
+# Table to relate stock to which type of CV (all weirs now...)
+cvTab <- tibble(
+  s = 1:ns,
+  cvIdx = 2)
 
 # Run a loop to spin up
 for(y in (nage+1):nySpinFit){
   
-  # Harvest rate for year y
+  # Harvest rate for year y ----- update to advice ------
   UTemp <- rtnorm(1, mean = initUMean, sd = initUSD, lower = 0, upper = 1)
   
   # Loop over stocks
@@ -62,20 +93,8 @@ for(y in (nage+1):nySpinFit){
     R[y,s] <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
                      S = Stot[y,s])
     
-  } # close s
-} # close y
-
-# Add in the uncertainty to the catch and the escapement observations
-# Table to relate stock to which type of CV (all weirs now...)
-cvTab <- tibble(
-  s = 1:ns,
-  cvIdx = 2)
-
-# Add observation errors
-for(y in (nage+1):nySpinFit){
-  
-  # Loop over stocks
-  for(s in 1:ns){
+    
+    # Add observation errors
     
     # Escapement and catch totals observed with error
     Stot_oe[y,s] <- rtnorm(1, Stot[y,s], cvAW[cvTab$cvIdx[s]])
@@ -85,65 +104,81 @@ for(y in (nage+1):nySpinFit){
     # and escapement are estimated from the same samples)
     paa_oeNTemp <- c(rmultinom(n = 1, size = oe_paaS, prob = S[y,,s]))
     paa_oe[y,,s] <- paa_oeNTemp / sum(paa_oeNTemp)
-  
-  } # close s
-} # close y
-
-# Calculate the observed run size
-for(s in 1:ns){
-  run_oe[,,s] <-  paa_oe[,,s] * (Stot_oe[,s] + Ctot_oe[,s])
-} # close s
-
-## Math needs to be checked here...........
-# Calculate the observed recruitment
-for(y in (nage+1):(nySpinFit-nage)){
-  for(s in 1:ns){
+    
+    # Calculate the observed run size
+    run_oe[y,,s] <-  paa_oe[y,,s] * (Stot_oe[y,s] + Ctot_oe[y,s])
+    
+    
+    # Calculate the observed recruitment
     
     # Observed recruitment associated with year y is the sum of the diagonal 
     # of the run-at-age for the next nage-1 years
-    R_oe[y,s] <-  sum(diag(run_oe[(y + 1):(y + nage),,s]))
-
+    # R_oe[y,s] <-  sum(diag(run_oe[(y + 1):(y + nage),,s]))
+    R_oe[y-nage,s] <-  sum(diag(run_oe[(y -nage + 1):y,,s]))
+    
+    
+    
   } # close s
+  
+  
+  # Fit the assessment model
+  
+  if(y > 30){
+    
+    # Get the appropriate number of years used to fit the assessment model
+    # (from the end of the data set)
+    R_lm <- apply(R_oe[(y-29):y,stocks2sample], 1, sum)
+    S_lm <- apply(Stot_oe[(y-29):y,stocks2sample], 1, sum)
+    
+    # Calculate the parameters of the Ricker model
+    lnRS <- log(R_lm+1e-5) - log(S_lm+1e-5)
+    SRlm <- try(lm(lnRS ~ S_lm))
+    lRpar <- coef(SRlm)
+    abase <- lRpar[1]
+    bbase <- -lRpar[1] / lRpar[2]
+    abase <- exp(lRpar[1])
+    bbase <- -lRpar[2]
+    
+    # get unbiased estimates (H&W p. 269)
+    sdR <- summary(SRlm)$sigma
+    aprime <- abase + sdR^2/2
+    bprime <- aprime / abase * bbase
+    Rpar <- c(aprime, bprime)
+  
+    # Calculate Smsy
+    # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
+    Smsy[y] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
+  }
+  
+  
+  # Determine advice for year y+1
+  
+  
+  
+  # Implement fishery
+  
+  
+  
 } # close y
 
-# Fit the assessment model
-for(s in 1:ns){
-  
-  # Get the appropriate number of years used to fit the assessment model
-  # (from the end of the data set)
-  R_lm <- tail(R_oe[,s], sryrs)
-  S_lm <- tail(Stot_oe[,s], sryrs)
-  
-  # Calculate the parameters of the Ricker model
-  lnRS <- log(R_lm+1e-5) - log(S_lm+1e-5)
-  SRlm <- try(lm(lnRS ~ S_lm))
-  lRpar <- coef(SRlm)
-  abase <- lRpar[1]
-  bbase <- -lRpar[1] / lRpar[2]
-  abase <- exp(lRpar[1])
-  bbase <- -lRpar[2]
-  
-  # get unbiased estimates (H&W p. 269)
-  sdR <- summary(SRlm)$sigma
-  aprime <- abase + sdR^2/2
-  bprime <- aprime / abase * bbase
-  Rpar <- c(aprime, bprime)
-  
-  # Calculate Smsy
-  Smsy <- Rpar[2] * (0.5 - 0.07 * Rpar[1])
-  
-}
 
 
 
-# 
+
+
+
+
+
+
+
+#
 # #  something is up with the calcs ... R_oe looks like
 # plot(R_lm ~ S_lm)
 # 
 # x <- 1:max(S_lm)
-# y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
+# y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s],
 #        S = x)
-# yprime <- ricker(alpha = aprime, beta = bprime, 
+# yprime <- ricker(alpha = aprime, beta = bprime,
 #                  S = x)
 # lines(x,y, col = 'red')
 # lines(x,yprime, col = 'blue')
