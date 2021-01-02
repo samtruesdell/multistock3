@@ -171,15 +171,19 @@ for(y in (nage+1):nySpinFit){
 
 
 
-#
-# #  something is up with the calcs ... R_oe looks like
-# plot(R_lm ~ S_lm)
-# 
-# x <- 1:max(S_lm)
-# y <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s],
-#        S = x)
-# yprime <- ricker(alpha = aprime, beta = bprime,
-#                  S = x)
-# lines(x,y, col = 'red')
-# lines(x,yprime, col = 'blue')
-# 
+
+#  something is up with the calcs ... R_oe looks like
+
+
+x <- 0:max(S_lm)
+r <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s],
+       S = x)
+
+rprime <- ricker(alpha = aprime, beta = bprime,
+                 S = x)
+yl <- c(0, max(r, rprime))
+
+plot(R_lm ~ S_lm, ylim=yl, xlim=range(x))
+lines(x, r, col = 'red')
+lines(x, rprime, col = 'blue')
+
