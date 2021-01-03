@@ -58,7 +58,7 @@ for(s in 1:ns){
   R_oe[1:nage,s] <-  sum(diag(run_oe[(1:(nage)),,s]))
 }
 
-# Initial observed total stock size
+# Initial observed total stock size (no observation error...)
 Stot_oe[1:nage,] <- Stot[1:nage,]
 
 
@@ -68,11 +68,15 @@ cvTab <- tibble(
   s = 1:ns,
   cvIdx = 2)
 
-# Run a loop to spin up
+# Initially turn on flag to update escapement goal
+updateEGFlag <- TRUE
+
+# Loop over years
 for(y in (nage+1):nySpinFit){
   
   # Harvest rate for year y ----- update to advice ------
   UTemp <- rtnorm(1, mean = initUMean, sd = initUSD, lower = 0, upper = 1)
+  
   
   # Loop over stocks
   for(s in 1:ns){
@@ -96,7 +100,7 @@ for(y in (nage+1):nySpinFit){
     
     # Add observation errors
     
-    # Escapement and catch totals observed with error
+    # Escapement and catch totals observed with error (should possibly be lognormal?)
     Stot_oe[y,s] <- rtnorm(1, Stot[y,s], cvAW[cvTab$cvIdx[s]])
     Ctot_oe[y,s] <- rtnorm(1, Ctot[y,s], cvAW[cvTab$cvIdx[s]])
     
@@ -123,12 +127,12 @@ for(y in (nage+1):nySpinFit){
   
   # Fit the assessment model
   
-  if(y > 30){
+  if(y > 30 + nage & updateEGFlag){
     
     # Get the appropriate number of years used to fit the assessment model
     # (from the end of the data set)
-    R_lm <- apply(R_oe[(y-29):y,stocks2sample], 1, sum)
-    S_lm <- apply(Stot_oe[(y-29):y,stocks2sample], 1, sum)
+    R_lm <- apply(R_oe[(y-29):(y-nage),stocks2sample], 1, sum)
+    S_lm <- apply(Stot_oe[(y-29):(y-nage),stocks2sample], 1, sum)
     
     # Calculate the parameters of the Ricker model
     lnRS <- log(R_lm+1e-5) - log(S_lm+1e-5)
@@ -143,15 +147,19 @@ for(y in (nage+1):nySpinFit){
     sdR <- summary(SRlm)$sigma
     aprime <- abase + sdR^2/2
     bprime <- aprime / abase * bbase
-    Rpar <- c(aprime, bprime)
+    rMod[[y]] <- list(R_lm = R_lm, S_lm = S_lm,
+                      aprime = aprime, bprime = bprime)
   
     # Calculate Smsy
     # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
     Smsy[y] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
+    
+    updateEGFlag <- ifelse(updateEG, TRUE, FALSE)
+    
   }
   
   
-  # Determine advice for year y+1
+  
   
   
   
@@ -171,19 +179,4 @@ for(y in (nage+1):nySpinFit){
 
 
 
-
-#  something is up with the calcs ... R_oe looks like
-
-
-x <- 0:max(S_lm)
-r <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s],
-       S = x)
-
-rprime <- ricker(alpha = aprime, beta = bprime,
-                 S = x)
-yl <- c(0, max(r, rprime))
-
-plot(R_lm ~ S_lm, ylim=yl, xlim=range(x))
-lines(x, r, col = 'red')
-lines(x, rprime, col = 'blue')
 
