@@ -60,3 +60,6 @@ sryrs <- 30
 # Probability of return by age class
 pReturn = c(a1=0, a2=0, a3=0, a4=.2, a5=.39, a6=.38, a7=.03)
 
+# Whether to update the escapement goal every year or not
+updateEG <- FALSE
+
