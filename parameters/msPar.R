@@ -1,6 +1,9 @@
 
 
 
+# number of repetitions
+nrep <- 5
+
 
 # number of stocks to be monitored
 ns_low <- 1
@@ -34,6 +37,9 @@ initUSD <- 0.3
 # CVs for aerial surveys [1] and weirs [2] and ESS for weirs
 # and correlations btw aerial surveys and weirs
 cvAW <- c(1, 0.01)
+
+# SD for run size estimate
+oe_runEst <- 0.5
 
 
 oe_paaS <- 200

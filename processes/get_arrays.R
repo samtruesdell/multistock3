@@ -16,3 +16,9 @@ Smsy <- numeric(nySpinFit)
 
 # Save results of model fitting
 rMod <- list()
+
+# Run size estimate
+runEst <- numeric(nySpinFit)
+
+# Escapement goals
+EG <- numeric(nySpinFit)
