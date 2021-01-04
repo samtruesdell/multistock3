@@ -1,6 +1,9 @@
 
 
 
+# number of repetitions
+nrep <- 5
+
 
 # number of stocks to be monitored
 ns_low <- 1
@@ -35,6 +38,9 @@ initUSD <- 0.3
 # and correlations btw aerial surveys and weirs
 cvAW <- c(1, 0.01)
 
+# SD for run size estimate
+oe_runEst <- 0.5
+
 
 oe_paaS <- 200
 oe_catch <- 0.1
@@ -59,4 +65,7 @@ sryrs <- 30
 
 # Probability of return by age class
 pReturn = c(a1=0, a2=0, a3=0, a4=.2, a5=.39, a6=.38, a7=.03)
+
+# Whether to update the escapement goal every year or not
+updateEG <- FALSE
 

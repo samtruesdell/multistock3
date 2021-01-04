@@ -12,3 +12,13 @@ Ctot_oe <- array(data = NA, dim = c(nySpinFit, ns))
 paa_oe <- array(data = NA, dim = c(nySpinFit, nage, ns))
 run_oe <- array(data = NA, dim = c(nySpinFit, nage, ns))
 R_oe <- matrix(data = NA, nrow = nySpinFit, ncol = ns)
+Smsy <- numeric(nySpinFit)
+
+# Save results of model fitting
+rMod <- list()
+
+# Run size estimate
+runEst <- numeric(nySpinFit)
+
+# Escapement goals
+EG <- numeric(nySpinFit)
