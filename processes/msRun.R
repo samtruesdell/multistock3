@@ -73,7 +73,7 @@ updateEGFlag <- TRUE
 
 # # Set Smsy & EG for initial years before it is calculated
 Smsy[1:(nage+1)] <- sum(N0)
-# EG[1:(30 + nage)] <- Smsy[1:(30 + nage)]
+# EG[1:(nySRMod + nage)] <- Smsy[1:(nySRMod + nage)]
 
 
 # Grid of options
@@ -103,7 +103,7 @@ for(i in 1:nrow(opt)){
     # # Harvest rate for year y ----- update to advice ------
     # UTemp <- rtnorm(1, mean = initUMean, sd = initUSD, lower = 0, upper = 1)
     
-    if(y < (30 + nage)){
+    if(y < (nySRMod + nage)){
       U <- rtnorm(1, mean = initUMean, sd = initUSD, lower = 0, upper = 1)
     }else{
       if(runEst[y] >= EG[y]){
@@ -158,12 +158,12 @@ for(i in 1:nrow(opt)){
     
     # Fit the assessment model
     
-    if(y > 30 + nage & updateEGFlag){
+    if(y > nySRMod + nage & updateEGFlag){
       
       # Get the appropriate number of years used to fit the assessment model
       # (from the end of the data set)
-      R_lm <- apply(R_oe[(y-29):(y-nage),stocks2sample], 1, sum)
-      S_lm <- apply(Stot_oe[(y-29):(y-nage),stocks2sample], 1, sum)
+      R_lm <- apply(R_oe[(y-(nySRMod-1)):(y-nage),stocks2sample], 1, sum)
+      S_lm <- apply(Stot_oe[(y-(nySRMod-1)):(y-nage),stocks2sample], 1, sum)
       
       # Calculate the parameters of the Ricker model
       lnRS <- log(R_lm+1e-5) - log(S_lm+1e-5)
