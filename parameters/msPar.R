@@ -4,6 +4,9 @@
 # number of repetitions
 nrep <- 5
 
+# number of years in the SR model
+nySRMod <- 30
+
 
 # number of stocks to be monitored
 ns_low <- 1
