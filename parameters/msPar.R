@@ -2,7 +2,7 @@
 
 
 # number of repetitions
-nrep <- 5
+nrep <- 2
 
 # number of years in the SR model
 nySRMod <- 30
@@ -11,7 +11,7 @@ nySRMod <- 30
 # number of stocks to be monitored
 ns_low <- 1
 ns_med <- 1
-ns_high <- 0
+ns_high <- 1
 
 # Levels for alphas and betas
 abounds <- matrix(c(5, 8,
