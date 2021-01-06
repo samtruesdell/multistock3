@@ -20,7 +20,7 @@ ns <- ns_high + ns_med + ns_low
 nySpinFit <- nySpin + nyFit
 
 # Get the stocks to sample ----- change to vary within loop --------
-stocks2sample <- 1:2
+stocks2sample <- expand.grid(replicate(ns, 0:1, simplify = FALSE))[-1,]
 
 # build the containers
 source('processes/get_arrays.R')
@@ -32,6 +32,12 @@ stpar <- get_stockPar(nh = ns_high, nm = ns_med, nl = ns_low,
 # Get equilibrium stock size
 N0 <- get_initN(alpha = stpar$alpha, beta = stpar$beta)
 N[1:nage,1:nage,] <- sapply(N0, function(x) rep(x * pReturn, each = nage))
+
+# Get true Smsys
+Smsy_true <- sapply(1:nrow(stpar), 
+                    function(x) eq_ricker(stpar$alpha[x], 
+                                          stpar$beta[x], 
+                                          U=0)$Smsy_sum)
 
 # Get equilibrium initial recruitment
 R[1:nage,] <- rep(N0, each = nage)
@@ -72,17 +78,21 @@ cvTab <- tibble(
 updateEGFlag <- TRUE
 
 # # Set Smsy & EG for initial years before it is calculated
-Smsy[1:(nage+1)] <- sum(N0)
+SmsyScaled[1:(nage+1)] <- sum(N0)
 # EG[1:(nySRMod + nage)] <- Smsy[1:(nySRMod + nage)]
 
 
 # Grid of options
 opt <- expand.grid(n = 1:nrep,
+                   s2s = 1:nrow(stocks2sample),
                    egs = egscalar)
+nopt <- nrow(opt)
+
+source('processes/get_arraysSummary.R')
 
 
 # Loop over options
-for(i in 1:nrow(opt)){
+for(i in 1:nopt){
 
   # Loop over years
   for(y in (nage+1):nySpinFit){
@@ -96,6 +106,7 @@ for(i in 1:nrow(opt)){
       
     }
     
+    # Pre-season run estimate
     runEst[y] <- rtnorm(1, mean = sum(apply(Run[y,,], 1, sum)), 
                         sd = oe_runEst, lower = 0)
     
@@ -135,6 +146,8 @@ for(i in 1:nrow(opt)){
       Stot_oe[y,s] <- rtnorm(1, Stot[y,s], cvAW[cvTab$cvIdx[s]])
       Ctot_oe[y,s] <- rtnorm(1, Ctot[y,s], cvAW[cvTab$cvIdx[s]])
       
+      # Set observations to zero for unobserved stocks
+      
       # Escapement proportions-at-age observed with error (assumes that catch
       # and escapement are estimated from the same samples)
       paa_oeNTemp <- c(rmultinom(n = 1, size = oe_paaS, prob = S[y,,s]))
@@ -162,8 +175,9 @@ for(i in 1:nrow(opt)){
       
       # Get the appropriate number of years used to fit the assessment model
       # (from the end of the data set)
-      R_lm <- apply(R_oe[(y-(nySRMod-1)):(y-nage),stocks2sample], 1, sum)
-      S_lm <- apply(Stot_oe[(y-(nySRMod-1)):(y-nage),stocks2sample], 1, sum)
+      s2sCol <- which(stocks2sample[opt$s2s[i],] == 1)
+      R_lm <- apply(R_oe[(y-(nySRMod-1)):(y-nage), s2sCol, drop = FALSE], 1, sum)
+      S_lm <- apply(Stot_oe[(y-(nySRMod-1)):(y-nage), s2sCol, drop = FALSE], 1, sum)
       
       # Calculate the parameters of the Ricker model
       lnRS <- log(R_lm+1e-5) - log(S_lm+1e-5)
@@ -183,17 +197,20 @@ for(i in 1:nrow(opt)){
     
       # Calculate Smsy
       # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
-      Smsy[y+1] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
+      SmsyEst[y+1] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
+      basinExp <- sum(Smsy_true) / sum(Smsy_true[s2sCol])
+      SmsyScaled[y+1] <- SmsyEst[y+1] * basinExp
       
       updateEGFlag <- ifelse(updateEG, TRUE, FALSE)
       
     }else{
       
-      Smsy[y+1] <- Smsy[y]
+      SmsyEst[y+1] <- SmsyEst[y]
+      SmsyScaled[y+1] <- SmsyScaled[y]
   
     }
     
-    EG[y+1] <- Smsy[y] * opt$egs[i]  # 3 is placeholder ... will have another loop
+    EG[y+1] <- SmsyScaled[y] * opt$egs[i]
     
     
     
@@ -201,6 +218,12 @@ for(i in 1:nrow(opt)){
     
   } # close y
   
+  yrs2save <- (nySpinFit-9):nySpinFit
+  run2save <- apply(Run[yrs2save,,], 1, sum)
+  h2save <- apply(Ctot[yrs2save,], 1, sum)
+  
+  meanRun[i] <- mean(run2save)
+  meanH[i] <- mean(h2save)
   
 } # close i (options loop)
 
