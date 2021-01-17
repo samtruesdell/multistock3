@@ -239,14 +239,6 @@ for(i in 1:nopt){
       updateEGFlag <- ifelse(updateEG, TRUE, FALSE)
       
       
-      # Calculate overfished / extirpated status
-      seqOut <- sapply(1:nrow(stpar),
-                       function(x) SC.eq(U = UImp[y],
-                                         a = stpar[x,'alpha'],
-                                         b = stpar[x,'beta']))
-      OF[y,] <- seqOut['OF',]
-      EX[y,] <- seqOut['EX',]
-      
     }else{
       
       SmsyEst[y+1] <- SmsyEst[y]
@@ -255,6 +247,15 @@ for(i in 1:nopt){
     }
     
     EG[y+1] <- SmsyScaled[y] * opt$egs[i]
+    
+    
+    # Calculate overfished / extirpated status
+    seqOut <- sapply(1:nrow(stpar),
+                     function(x) SC.eq(U = UImp[y],
+                                       a = stpar[x,'alpha'],
+                                       b = stpar[x,'beta']))
+    OF[y,] <- seqOut['OF',]
+    EX[y,] <- seqOut['EX',]
     
     
   } # close y
