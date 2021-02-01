@@ -222,8 +222,11 @@ for(i in 1:nopt){
       # Calculate Smsy
       # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
       SmsyEst[y+1] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
-      
-      
+# hmmmmmmm occasional negative estimates of Smsy.      
+      if(SmsyEst[y+1] < 0){
+        SmsyEst[y+1] <- SmsyEst[y]
+        cat('... negative estimate of Smsy -- Smsy[i] < Smsy[i-1] ...\n')
+      }
       ## Determine the expansion factor for [stocks sampled]:[stocks in basin]
       # Stock sample ratio
       ssr <- sum(Smsy_true[s2sCol]) / sum(Smsy_true)
@@ -344,10 +347,43 @@ res %>%
 
 
 
+res %>%
+  group_by(egs, nweir, nstockSamp) %>%
+  summarize(meanOF = mean(pctOF),
+            .groups = 'drop') %>%
+  pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
+  ggplot(aes(x = egs, y = value, color = paste(nweir, nstockSamp))) +
+  geom_line() +
+  title('Percent overfished')
 
 res %>%
-  filter(meanSmsy > 0, meanSmsy < 10000) %>%
+  group_by(egs, nweir, nstockSamp) %>%
+  summarize(meanOF = mean(pctEX),
+            .groups = 'drop') %>%
+  pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
+  ggplot(aes(x = egs, y = value, color = paste(nweir, nstockSamp))) +
+  geom_line() +
+  title('Percent extirpated')
+
+
+
+res %>%
   ggplot(aes(y = meanSmsy, x=nstockSamp, fill = factor(nweir))) +
+  geom_col(position = 'dodge')
+
+
+# Average harvest
+res %>%
+  group_by(nweir, nstockSamp) %>%
+  summarize(meanH = mean(meanH)) %>%
+  ggplot(aes(y = meanH, x=nstockSamp, fill = factor(nweir))) +
+  geom_col(position = 'dodge')
+
+# Average run
+res %>%
+  group_by(nweir, nstockSamp) %>%
+  summarize(meanRun = mean(meanRun)) %>%
+  ggplot(aes(y = meanRun, x=nstockSamp, fill = factor(nweir))) +
   geom_col(position = 'dodge')
 
 
