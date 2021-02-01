@@ -35,48 +35,13 @@ names(sampDsn) <- paste0('stock', 1:ns)
 # build the containers
 source('processes/get_arrays.R')
 
-# Get stock parameters -- move inside loop or calc N out here & reference
-# in options
-stpar <- get_stockPar(nh = ns_high, nm = ns_med, nl = ns_low, 
-                      ab = abounds, bb = bbounds)
 
-# Get equilibrium stock size
-N0 <- get_initN(alpha = stpar$alpha, beta = stpar$beta)
-N[1:nage,1:nage,] <- sapply(N0, function(x) rep(x * pReturn, each = nage))
-
-# Get true Smsys
-Smsy_true <- sapply(1:nrow(stpar), 
-                    function(x) eq_ricker(stpar$alpha[x], 
-                                          stpar$beta[x], 
-                                          U=0)$Smsy_sum)
-
-# Get equilibrium initial recruitment
-R[1:nage,] <- rep(N0, each = nage)
-
-# Get equilibrium run
-for(s in 1:ns){
-  Run[1:nage,,s] <- rep(rev(R[1:(nage),s] * rev(pReturn)), each = nage)
+# Determine alpha and beta values for each of the reps
+stpar <- list()
+for(i in 1:nrep){
+  stpar[[i]] <- get_stockPar(nh = ns_high, nm = ns_med, nl = ns_low, 
+                             ab = abounds, bb = bbounds)
 }
-
-
-# Initial escapement-at-age and total escapement (0.25 initial U)
-S[1:nage,,] <- Run[1:nage,,] * (1 - 0.25)
-Stot[1:nage,] <- apply(S[1:nage,,], c(1,3), sum)
-
-# Initial catch-at-age and total catch
-C[1:nage,,] <- Run[1:nage,,] * 0.25
-Ctot[1:nage,] <- apply(C[1:nage,,], c(1,3), sum)
-
-# Initial observed run size (no observation error...)
-run_oe[1:nage,,] <-  Run[1:nage,,]
-
-# Initial observed recruitment
-for(s in 1:ns){
-  R_oe[1:nage,s] <-  sum(diag(run_oe[(1:(nage)),,s]))
-}
-
-# Initial observed total stock size (no observation error...)
-Stot_oe[1:nage,] <- Stot[1:nage,]
 
 
 
@@ -105,6 +70,50 @@ cat('number of iterations:', nrow(opt), '\n')
 # Loop over options
 for(i in 1:nopt){
 
+  tmp_stpar <- stpar[[opt$n[i]]]
+  tmp_alpha <- tmp_stpar$alpha
+  tmp_beta <- tmp_stpar$beta
+  
+  # Get equilibrium stock size
+  N0 <- get_initN(alpha = tmp_alpha, beta = tmp_beta)
+  N[1:nage,1:nage,] <- sapply(N0, function(x) rep(x * pReturn, each = nage))
+  
+  # Get true Smsys
+  Smsy_true <- sapply(1:nrow(tmp_stpar), 
+                      function(x) eq_ricker(tmp_alpha, 
+                                            tmp_beta, 
+                                            U = 0)$Smsy_sum)
+  
+  # Get equilibrium initial recruitment
+  R[1:nage,] <- rep(N0, each = nage)
+  
+  # Get equilibrium run
+  for(s in 1:ns){
+    Run[1:nage,,s] <- rep(rev(R[1:(nage),s] * rev(pReturn)), each = nage)
+  }
+  
+  
+  # Initial escapement-at-age and total escapement (0.25 initial U)
+  S[1:nage,,] <- Run[1:nage,,] * (1 - 0.25)
+  Stot[1:nage,] <- apply(S[1:nage,,], c(1,3), sum)
+  
+  # Initial catch-at-age and total catch
+  C[1:nage,,] <- Run[1:nage,,] * 0.25
+  Ctot[1:nage,] <- apply(C[1:nage,,], c(1,3), sum)
+  
+  # Initial observed run size (no observation error...)
+  run_oe[1:nage,,] <-  Run[1:nage,,]
+  
+  # Initial observed recruitment
+  for(s in 1:ns){
+    R_oe[1:nage,s] <-  sum(diag(run_oe[(1:(nage)),,s]))
+  }
+  
+  # Initial observed total stock size (no observation error...)
+  Stot_oe[1:nage,] <- Stot[1:nage,]
+  
+  
+  
   # Initially turn on flag in order to update escapement goal
   updateEGFlag <- TRUE
   
@@ -152,7 +161,7 @@ for(i in 1:nopt){
       Ctot[y,s] <- sum(C[y,,s])
       
       # Recruits spawned in year y
-      R[y,s] <- ricker(alpha = stpar$alpha[s], beta = stpar$beta[s], 
+      R[y,s] <- ricker(alpha = tmp_alpha[s], beta = tmp_beta[s], 
                        S = Stot[y,s])
       
       
@@ -253,10 +262,10 @@ for(i in 1:nopt){
     
     
     # Calculate overfished / extirpated status
-    seqOut <- sapply(1:nrow(stpar),
+    seqOut <- sapply(1:nrow(tmp_stpar),
                      function(x) SC.eq(U = UImp[y],
-                                       a = stpar[x,'alpha'],
-                                       b = stpar[x,'beta']))
+                                       a = tmp_alpha[x],
+                                       b = tmp_beta[x]))
     OF[y,] <- seqOut['OF',]
     EX[y,] <- seqOut['EX',]
     
@@ -281,7 +290,7 @@ for(i in 1:nopt){
   
   # Average estiamted Smsy
   Smsy2save <- SmsyScaled[yrs2save]
-  meanSmsy[i] <- mean(Smsy2save)
+  meanSmsy[i] <- mean(Smsy2save, trim = 0.1)
   
   # Overall percent overfished
   OF2save <- OF[yrs2save,]
@@ -303,7 +312,7 @@ for(i in 1:nopt){
 } # close i (options loop)
 
 
-library(tidyverse)
+
 res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
   as.data.frame() %>%
   as_tibble() %>%
@@ -313,6 +322,7 @@ res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
   ungroup()
 
 
+# Harvest by # of stocks sampled
 res %>%
   group_by(egs, nstockSamp) %>%
   summarize(meanRun = mean(meanRun),
@@ -321,9 +331,11 @@ res %>%
   pivot_longer(-c(egs, nstockSamp), names_to = 'metric', values_to = 'value') %>%
   ggplot(aes(x = egs, y = value, color = metric, group = metric)) +
   geom_line() +
-  facet_wrap('nstockSamp')
+  facet_wrap('nstockSamp') +
+  ggtitle('Harvest by number of stocks sampled')
   
 
+# Harvest by number of weirs
 res %>%
   group_by(egs, nweir) %>%
   summarize(meanRun = mean(meanRun),
@@ -332,9 +344,11 @@ res %>%
   pivot_longer(-c(egs, nweir), names_to = 'metric', values_to = 'value') %>%
     ggplot(aes(x = egs, y = value, color = metric, group = metric)) +
     geom_line() +
-    facet_wrap('nweir')
+    facet_wrap('nweir') +
+  ggtitle('Harvest and run size by # weirs')
 
 
+# Harvest and run size under the different options
 res %>%
   group_by(egs, nweir, nstockSamp) %>%
   summarize(meanRun = mean(meanRun),
@@ -343,33 +357,41 @@ res %>%
   pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
   ggplot(aes(x = egs, y = value, color = metric, group = metric)) +
   geom_line() +
-  facet_grid(cols=vars(nstockSamp), rows=vars(nweir))
+  facet_grid(cols=vars(nstockSamp), rows=vars(nweir)) +
+  ggtitle('Harvest and run size')
 
 
-
+# Percent overfished
 res %>%
+  mutate(nstockSamp = factor(nstockSamp),
+         nweir = factor(nweir)) %>%
   group_by(egs, nweir, nstockSamp) %>%
   summarize(meanOF = mean(pctOF),
             .groups = 'drop') %>%
   pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
-  ggplot(aes(x = egs, y = value, color = paste(nweir, nstockSamp))) +
+  ggplot(aes(x = egs, y = value, linetype = nweir, color = nstockSamp)) +
   geom_line() +
-  title('Percent overfished')
+  ggtitle('Percent overfished')
 
+
+# Percent extirpated
 res %>%
+  mutate(nstockSamp = factor(nstockSamp),
+         nweir = factor(nweir)) %>%
   group_by(egs, nweir, nstockSamp) %>%
   summarize(meanOF = mean(pctEX),
             .groups = 'drop') %>%
   pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
-  ggplot(aes(x = egs, y = value, color = paste(nweir, nstockSamp))) +
+  ggplot(aes(x = egs, y = value, linetype = nweir, color = nstockSamp)) +
   geom_line() +
-  title('Percent extirpated')
+  ggtitle('Percent extirpated')
 
 
-
+# Average Smsy
 res %>%
   ggplot(aes(y = meanSmsy, x=nstockSamp, fill = factor(nweir))) +
-  geom_col(position = 'dodge')
+  geom_col(position = 'dodge') +
+  ggtitle('Average Smsy')
 
 
 # Average harvest
@@ -377,13 +399,15 @@ res %>%
   group_by(nweir, nstockSamp) %>%
   summarize(meanH = mean(meanH)) %>%
   ggplot(aes(y = meanH, x=nstockSamp, fill = factor(nweir))) +
-  geom_col(position = 'dodge')
+  geom_col(position = 'dodge') +
+  ggtitle('Average harvest (trimmed mean)')
 
 # Average run
 res %>%
   group_by(nweir, nstockSamp) %>%
   summarize(meanRun = mean(meanRun)) %>%
   ggplot(aes(y = meanRun, x=nstockSamp, fill = factor(nweir))) +
-  geom_col(position = 'dodge')
+  geom_col(position = 'dodge') +
+  ggtitle('Average run size (trimmed mean)')
 
 
