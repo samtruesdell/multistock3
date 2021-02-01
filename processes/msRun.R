@@ -233,9 +233,9 @@ for(i in 1:nopt){
       prodCV <- get_prodCV(K = 8.5, b = 1000, p = ssr)
       
       SmsyScaled[y+1] <- rlnorm(n = 1,
-                                meanlog = SmsyEst[y+1] * basinExp,
+                                meanlog = log(SmsyEst[y+1] * basinExp),
                                 sdlog = prodCV)
-      
+
       updateEGFlag <- ifelse(updateEG, TRUE, FALSE)
       
       
