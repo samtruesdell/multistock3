@@ -301,7 +301,7 @@ for(i in 1:nopt){
 
 
 library(tidyverse)
-res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy) %>%
+res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
   as.data.frame() %>%
   as_tibble() %>%
   rowwise() %>%
