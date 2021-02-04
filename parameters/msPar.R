@@ -2,7 +2,7 @@
 
 
 # number of repetitions
-nrep <- 2
+nrep <- 5
 
 # number of years in the SR model
 nySRMod <- 30
