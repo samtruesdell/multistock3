@@ -231,7 +231,8 @@ for(i in 1:nopt){
       # Calculate Smsy
       # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
       SmsyEst[y+1] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
-# hmmmmmmm occasional negative estimates of Smsy.      
+
+      # hmmmmmmm occasional negative estimates of Smsy.      
       if(SmsyEst[y+1] < 0){
         SmsyEst[y+1] <- SmsyEst[y]
         cat('... negative estimate of Smsy -- Smsy[i] < Smsy[i-1] ...\n')
@@ -319,7 +320,9 @@ res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
   rowwise() %>%
   mutate(nweir = sum(across(starts_with('stock')) == 0.01),
          nstockSamp = sum(across(starts_with('stock')) > 0)) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(nweir = paste('nweir:', nweir),
+         nstockSamp = paste('nstockSamp:', nstockSamp))
 
 
 # Harvest by # of stocks sampled
