@@ -313,7 +313,7 @@ for(i in 1:nopt){
 } # close i (options loop)
 
 
-
+# Compile results
 res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
   as.data.frame() %>%
   as_tibble() %>%
@@ -325,92 +325,12 @@ res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
          nstockSamp = paste('nstockSamp:', nstockSamp))
 
 
-# Harvest by # of stocks sampled
-res %>%
-  group_by(egs, nstockSamp) %>%
-  summarize(meanRun = mean(meanRun),
-            meanH = mean(meanH),
-            .groups = 'drop') %>%
-  pivot_longer(-c(egs, nstockSamp), names_to = 'metric', values_to = 'value') %>%
-  ggplot(aes(x = egs, y = value, color = metric, group = metric)) +
-  geom_line() +
-  facet_wrap('nstockSamp') +
-  ggtitle('Harvest by number of stocks sampled')
-  
+# Create new folder to store the results
+dir.create('results', showWarnings = FALSE)
+now <- format(Sys.time(), '%Y-%m-%d_%H-%M-%S')
+figPath <- file.path('results', now)
+dir.create(figPath, showWarnings = FALSE)
 
-# Harvest by number of weirs
-res %>%
-  group_by(egs, nweir) %>%
-  summarize(meanRun = mean(meanRun),
-            meanH = mean(meanH),
-            .groups = 'drop') %>%
-  pivot_longer(-c(egs, nweir), names_to = 'metric', values_to = 'value') %>%
-    ggplot(aes(x = egs, y = value, color = metric, group = metric)) +
-    geom_line() +
-    facet_wrap('nweir') +
-  ggtitle('Harvest and run size by # weirs')
-
-
-# Harvest and run size under the different options
-res %>%
-  group_by(egs, nweir, nstockSamp) %>%
-  summarize(meanRun = mean(meanRun),
-            meanH = mean(meanH),
-            .groups = 'drop') %>%
-  pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
-  ggplot(aes(x = egs, y = value, color = metric, group = metric)) +
-  geom_line() +
-  facet_grid(cols=vars(nstockSamp), rows=vars(nweir)) +
-  ggtitle('Harvest and run size')
-
-
-# Percent overfished
-res %>%
-  mutate(nstockSamp = factor(nstockSamp),
-         nweir = factor(nweir)) %>%
-  group_by(egs, nweir, nstockSamp) %>%
-  summarize(meanOF = mean(pctOF),
-            .groups = 'drop') %>%
-  pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
-  ggplot(aes(x = egs, y = value, linetype = nweir, color = nstockSamp)) +
-  geom_line() +
-  ggtitle('Percent overfished')
-
-
-# Percent extirpated
-res %>%
-  mutate(nstockSamp = factor(nstockSamp),
-         nweir = factor(nweir)) %>%
-  group_by(egs, nweir, nstockSamp) %>%
-  summarize(meanOF = mean(pctEX),
-            .groups = 'drop') %>%
-  pivot_longer(-c(egs, nweir, nstockSamp), names_to = 'metric', values_to = 'value') %>%
-  ggplot(aes(x = egs, y = value, linetype = nweir, color = nstockSamp)) +
-  geom_line() +
-  ggtitle('Percent extirpated')
-
-
-# Average Smsy
-res %>%
-  ggplot(aes(y = meanSmsy, x=nstockSamp, fill = factor(nweir))) +
-  geom_col(position = 'dodge') +
-  ggtitle('Average Smsy')
-
-
-# Average harvest
-res %>%
-  group_by(nweir, nstockSamp) %>%
-  summarize(meanH = mean(meanH)) %>%
-  ggplot(aes(y = meanH, x=nstockSamp, fill = factor(nweir))) +
-  geom_col(position = 'dodge') +
-  ggtitle('Average harvest (trimmed mean)')
-
-# Average run
-res %>%
-  group_by(nweir, nstockSamp) %>%
-  summarize(meanRun = mean(meanRun)) %>%
-  ggplot(aes(y = meanRun, x=nstockSamp, fill = factor(nweir))) +
-  geom_col(position = 'dodge') +
-  ggtitle('Average run size (trimmed mean)')
-
+# Save the plots
+get_plots(res = res, pth = figPath)
 
