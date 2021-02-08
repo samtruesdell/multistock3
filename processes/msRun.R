@@ -334,3 +334,6 @@ dir.create(figPath, showWarnings = FALSE)
 # Save the plots
 get_plots(res = res, pth = figPath)
 
+# compile summary document
+rmdFigPath <- file.path('..', figPath)
+rmarkdown::render('tpl/runSummaryTemplate.Rmd')

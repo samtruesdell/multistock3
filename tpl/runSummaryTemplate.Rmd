@@ -1,0 +1,31 @@
+---
+title: "Run summary"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Model parameters (parameters/msPar.R)
+```{r echo = FALSE}
+parFile <- paste(readLines('../parameters/msPar.R'), collapse = '\n')
+```
+
+```{r eval = FALSE, code = parFile}
+```
+
+
+## Results
+
+![](`r file.path(rmdFigPath, 'hr_stocks.png')`)
+![](`r file.path(rmdFigPath, 'hr_weirs.png')`)
+![](`r file.path(rmdFigPath, 'hr_stocksWeirs.png')`)
+![](`r file.path(rmdFigPath, 'meanH.png')`)
+![](`r file.path(rmdFigPath, 'meanRun.png')`)
+![](`r file.path(rmdFigPath, 'pextr.png')`)
+![](`r file.path(rmdFigPath, 'pover.png')`)
+![](`r file.path(rmdFigPath, 'meanSmsy.png')`)
+
+
