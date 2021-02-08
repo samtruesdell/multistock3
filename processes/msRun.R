@@ -337,3 +337,9 @@ get_plots(res = res, pth = figPath)
 # compile summary document
 rmdFigPath <- file.path('..', figPath)
 rmarkdown::render('tpl/runSummaryTemplate.Rmd')
+
+# Copy to appropriate results directory
+file.copy(from = 'tpl/runSummaryTemplate.html',
+          to = file.path(figPath, 'runSummary.html'),
+          overwrite = FALSE)
+
