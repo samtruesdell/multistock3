@@ -22,10 +22,12 @@ parFile <- paste(readLines('../parameters/msPar.R'), collapse = '\n')
 ![](`r file.path(rmdFigPath, 'hr_stocks.png')`)
 ![](`r file.path(rmdFigPath, 'hr_weirs.png')`)
 ![](`r file.path(rmdFigPath, 'hr_stocksWeirs.png')`)
-![](`r file.path(rmdFigPath, 'meanH.png')`)
-![](`r file.path(rmdFigPath, 'meanRun.png')`)
+<!-- ![](`r file.path(rmdFigPath, 'meanH.png')`) -->
+<!-- ![](`r file.path(rmdFigPath, 'meanRun.png')`) -->
 ![](`r file.path(rmdFigPath, 'pextr.png')`)
 ![](`r file.path(rmdFigPath, 'pover.png')`)
-![](`r file.path(rmdFigPath, 'meanSmsy.png')`)
+![](`r file.path(rmdFigPath, 'hTile.png')`)
+![](`r file.path(rmdFigPath, 'runTile.png')`)
+<!-- ![](`r file.path(rmdFigPath, 'meanSmsy.png')`) -->
 
 
