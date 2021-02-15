@@ -227,6 +227,10 @@ for(i in 1:nopt){
       bprime <- aprime / abase * bbase
       rMod[[y]] <- list(R_lm = R_lm, S_lm = S_lm,
                         aprime = aprime, bprime = bprime)
+
+# calc Smsy ---------------------------------------------------------------
+# test ----
+# 
     
       # Calculate Smsy
       # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
@@ -235,7 +239,7 @@ for(i in 1:nopt){
       # hmmmmmmm occasional negative estimates of Smsy.      
       if(SmsyEst[y+1] < 0){
         SmsyEst[y+1] <- SmsyEst[y]
-        cat('... negative estimate of Smsy -- Smsy[i] < Smsy[i-1] ...\n')
+        cat('... negative estimate of Smsy -- Smsy[i] <- Smsy[i-1] ...\n')
       }
       ## Determine the expansion factor for [stocks sampled]:[stocks in basin]
       # Stock sample ratio
@@ -319,10 +323,11 @@ res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
   as_tibble() %>%
   rowwise() %>%
   mutate(nweir = sum(across(starts_with('stock')) == 0.01),
-         nstockSamp = sum(across(starts_with('stock')) > 0)) %>%
+         nstockSamp = sum(across(starts_with('stock')) > 0),
+         propWeir = nweir / nstockSamp) %>%
   ungroup() %>%
-  mutate(nweir = paste('nweir:', nweir),
-         nstockSamp = paste('nstockSamp:', nstockSamp))
+  mutate(nweirTxt = paste('nweir:', nweir),
+         nstockSampTxt = paste('nstockSamp:', nstockSamp))
 
 
 # Create new folder to store the results
