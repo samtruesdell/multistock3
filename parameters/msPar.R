@@ -2,16 +2,16 @@
 
 
 # number of repetitions
-nrep <- 5
+nrep <- 3
 
 # number of years in the SR model
 nySRMod <- 30
 
 
 # number of stocks to be monitored
-ns_low <- 1
-ns_med <- 1
-ns_high <- 1
+ns_low <- 4
+ns_med <- 5
+ns_high <- 4
 
 # Levels for alphas and betas
 abounds <- matrix(c(5, 8,
@@ -35,7 +35,7 @@ nySpin <- 25
 
 # Initial U
 initUMean <- 0.3
-initUSD <- 0.3*3
+initUSD <- 0.3
 
 # CVs for aerial surveys [1] and weirs [2] and ESS for weirs
 # and correlations btw aerial surveys and weirs
@@ -45,7 +45,7 @@ cvAW <- c(1, 0.01)
 oe_runEst <- 0.1
 
 
-oe_paaS <- 200
+oe_paaS <- 50
 # oe_catch <- 0.1
 oe_U <- 0.1
 # oe_S <- 0.1
