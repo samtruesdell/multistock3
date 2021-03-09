@@ -28,9 +28,31 @@ ny2 <- ny + nySpin + nage
 
 # Determine sampling scheme -- matrix is 0 for unsampled and CV otherwise
 sampDsn <- expand.grid(replicate(ns, c(0,cvAW), simplify = FALSE))
-removeIdx <- apply(sampDsn, 1, sum) %% cvAW[1] == 0
+
+# For now only include 3 num stocks sampled
+ct <- apply(sampDsn, 1, function(x) length(x[x>0]))
+sampDsn <- sampDsn[ct %in% round(seq(1, ns, length.out = 3)),]
+
+# Remove cases where there are no weirs sampled
+# removeIdx <- apply(sampDsn, 1, sum) %% cvAW[1] == 0
+removeIdx <- apply(sampDsn, 1, function(x) length(x[x==cvAW[1]])) == 0
 sampDsn <- sampDsn[!removeIdx,]
 names(sampDsn) <- paste0('stock', 1:ns)
+
+# Limit the total number of sample orientations to 1000
+if(nrow(sampDsn) > 100){
+  nw <- apply(sampDsn, 1, function(x) length(x[x == cvAW[1]]))
+  dsnPart <- list()
+  for(i in 1:length(unique(nw))){
+    tmp <- sampDsn[nw == nw[i],]
+    if(nrow(tmp) > 100){
+      dsnPart[[i]] <- tmp[sample(1:nrow(tmp), size = 100, replace = FALSE),]
+    }else{
+      dsnPart[[i]] <- tmp
+    }
+  }
+  sampDsn <- do.call(rbind, dsnPart)
+}
 
 # build the containers
 source('processes/get_arrays.R')
@@ -60,6 +82,12 @@ for(i in 1:nrep){
 opt <- expand.grid(n = 1:nrep,
                    s2s = 1:nrow(sampDsn),
                    egs = egscalar)
+
+# Limit the total number of options to 5000
+# if(nrow(opt) > 5000){
+#   opt <- opt[sample(1:nrow(opt), size = 5000, replace = FALSE),]
+# }
+
 nopt <- nrow(opt)
 
 source('processes/get_arraysSummary.R')
