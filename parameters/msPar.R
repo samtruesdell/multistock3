@@ -2,7 +2,7 @@
 
 
 # number of repetitions
-nrep <- 10
+nrep <- 3
 
 # number of years in the SR model
 nySRMod <- 30
@@ -34,8 +34,8 @@ nySpin <- 25
 # nyFit <- 30
 
 # Initial U
-initUMean <- 0.3
-initUSD <- 0.3
+initUMean <- 0.8
+initUSD <- 0.1
 
 # CVs for aerial surveys [1] and weirs [2] and ESS for weirs
 # and correlations btw aerial surveys and weirs
