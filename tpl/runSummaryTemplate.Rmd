@@ -28,6 +28,9 @@ parFile <- paste(readLines('../parameters/msPar.R'), collapse = '\n')
 ![](`r file.path(rmdFigPath, 'pover.png')`)
 ![](`r file.path(rmdFigPath, 'hTile.png')`)
 ![](`r file.path(rmdFigPath, 'runTile.png')`)
+![](`r file.path(rmdFigPath, 'eTile.png')`)
+![](`r file.path(rmdFigPath, 'pctOFTile.png')`)
+![](`r file.path(rmdFigPath, 'pctEXTile.png')`)
 <!-- ![](`r file.path(rmdFigPath, 'meanSmsy.png')`) -->
 
 
