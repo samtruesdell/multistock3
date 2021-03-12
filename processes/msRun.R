@@ -62,6 +62,7 @@ rs <- apply(sampDsn2, 1, sum) # really there are length(unique(rs)) types
 uOpt <- unique(rs)
 
 ## Identify index numbers in design matrix that apply to each sample type
+## (this is independent of any productivity stratification)
 rowNumLst <- lapply(uOpt, function(x) which(rs == x))
 
 ## Sample the indices for each sampling type (replace = TRUE!!)
@@ -76,7 +77,7 @@ sampDsn <- sampDsn[sampDsnIdx,]
 
 # Grid of options. Repeating options that were sampled before ... but does it 
 # even matter if they are equivalent???
-opt <- expand.grid(n = 1:nrep,
+opt <- expand.grid(n = 1,#:nrep, ... nrep in the dsn matrix??
                    s2s = 1:nrow(sampDsn),
                    egs = egscalar)
 
@@ -119,11 +120,13 @@ for(i in 1:nopt){
   
   
   # Initial escapement-at-age and total escapement (0.25 initial U)
-  S[1:nage,,] <- Run[1:nage,,] * (1 - 0.25)
+  UTmp <- rtnorm(nage, initUMean, initUSD, lower = 0, upper = 1)
+  UtmpArr <- array(data = UTmp, dim = c(nage, nage, ns))
+  S[1:nage,,] <- Run[1:nage,,] * (1 - UtmpArr)
   Stot[1:nage,] <- apply(S[1:nage,,], c(1,3), sum)
   
   # Initial catch-at-age and total catch
-  C[1:nage,,] <- Run[1:nage,,] * 0.25
+  C[1:nage,,] <- Run[1:nage,,] * UtmpArr
   Ctot[1:nage,] <- apply(C[1:nage,,], c(1,3), sum)
   
   # Initial observed run size (no observation error...)
