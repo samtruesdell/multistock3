@@ -32,7 +32,7 @@ sampDsn <- expand.grid(replicate(ns, c(0,cvAW), simplify = FALSE))
 
 # Remove cases where there are no weirs sampled
 # removeIdx <- apply(sampDsn, 1, sum) %% cvAW[1] == 0
-removeIdx <- apply(sampDsn, 1, function(x) length(x[x==cvAW[1]])) == 0
+removeIdx <- apply(sampDsn, 1, function(x) length(x[x==cvAW[2]])) == 0
 sampDsn <- sampDsn[!removeIdx,]
 names(sampDsn) <- paste0('stock', 1:ns)
 
@@ -51,19 +51,6 @@ for(i in 1:nrep){
 
 
 
-# Table to relate stock to which type of CV (all weirs now...)
-# cvTab <- tibble(
-#   s = 1:ns,
-#   cvIdx = 2)
-
-
-# # Set Smsy & EG for initial years before it is calculated
-# SmsyScaled[1:(nage+1)] <- sum(N0)
-# EG[1:(nySRMod + nage)] <- Smsy[1:(nySRMod + nage)]
-
-
-
-
 # Subsample the design
 sampDsn2 <- sampDsn
 
@@ -77,17 +64,18 @@ uOpt <- unique(rs)
 ## Identify index numbers in design matrix that apply to each sample type
 rowNumLst <- lapply(uOpt, function(x) which(rs == x))
 
-## Sample the indices for each sampling type
+## Sample the indices for each sampling type (replace = TRUE!!)
+## Would rather not use replacement but I think it just doesn't matter.
 sampDsnIdx <- unlist(lapply(rowNumLst, 
                             function(x){
-                              x[sample(length(x), 
-                                       size = nrep, replace = TRUE)]
+                              x[sample(length(x), size = nrep, replace = TRUE)]
                             }))
 
 # Create a new design matrix
 sampDsn <- sampDsn[sampDsnIdx,]
 
-# Grid of options
+# Grid of options. Repeating options that were sampled before ... but does it 
+# even matter if they are equivalent???
 opt <- expand.grid(n = 1:nrep,
                    s2s = 1:nrow(sampDsn),
                    egs = egscalar)
@@ -359,12 +347,15 @@ res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
   as.data.frame() %>%
   as_tibble() %>%
   rowwise() %>%
-  mutate(nweir = sum(across(starts_with('stock')) == 0.01),
+  mutate(nweir = sum(across(starts_with('stock')) == cvAW[2]),
          nstockSamp = sum(across(starts_with('stock')) > 0),
          propWeir = nweir / nstockSamp) %>%
   ungroup() %>%
   mutate(nweirTxt = paste('nweir:', nweir),
-         nstockSampTxt = paste('nstockSamp:', nstockSamp))
+         nstockSampTxt = paste('nstockSamp:', nstockSamp),
+         nweirTxt = fct_reorder(nweirTxt, nweir),
+         nstockSampTxt = fct_reorder(nstockSampTxt, nstockSamp),
+         meanE = meanRun - meanH)
 
 
 # Create new folder to store the results
