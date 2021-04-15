@@ -158,7 +158,8 @@ for(i in 1:nopt){
     }
 
     # Pre-season run estimate
-    runEst[y] <- rlnorm(1, mean = log(sum(apply(Run[y,,], 1, sum))), 
+    runEst[y] <- rlnorm(1, mean = log(sum(apply(Run[y,,], 1, sum))) - 
+                          oe_runEst^2/2, 
                         sd = oe_runEst)
     
     
@@ -175,7 +176,8 @@ for(i in 1:nopt){
     }
 
     # Harvest rate including implementation error
-    UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]), sdlog = oe_U, min = 0, max = 1)
+    UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]) - oe_u^2/2, sdlog = oe_U, 
+                           min = 0, max = 1)
     
     # Loop over stocks
     for(s in 1:ns){
@@ -197,11 +199,13 @@ for(i in 1:nopt){
       
       # Escapement and catch totals observed with error
       Stot_oe[y,s] <- ifelse(sampDsn[opt$s2s[i],s] > 0,
-                             rlnorm(1, meanlog = log(Stot[y,s]), 
+                             rlnorm(1, meanlog = log(Stot[y,s]) - 
+                                      sampDsn[opt$s2s[i],s]^2/2, 
                                     sdlog = sampDsn[opt$s2s[i],s]),
                              0)
       Ctot_oe[y,s] <- ifelse(sampDsn[opt$s2s[i],s] > 0,
-                             rlnorm(1, meanlog = log(Ctot[y,s]), 
+                             rlnorm(1, meanlog = log(Ctot[y,s]) -
+                                      sampDsn[opt$s2s[i],s]^2/2, 
                                     sdlog = sampDsn[opt$s2s[i],s]),
                              0)
       
@@ -278,7 +282,8 @@ for(i in 1:nopt){
       prodCV <- get_prodCV(K = 8.5, b = 1000, p = ssr)
       
       SmsyScaled[y+1] <- rlnorm(n = 1,
-                                meanlog = log(SmsyEst[y+1] * basinExp),
+                                meanlog = log(SmsyEst[y+1] * basinExp) - 
+                                  prodCV^2/2,
                                 sdlog = prodCV)
 
       updateEGFlag <- ifelse(updateEG, TRUE, FALSE)
