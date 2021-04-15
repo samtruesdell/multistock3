@@ -106,8 +106,8 @@ for(i in 1:nopt){
   
   # Get true Smsys
   Smsy_true <- sapply(1:nrow(tmp_stpar), 
-                      function(x) eq_ricker(tmp_alpha, 
-                                            tmp_beta, 
+                      function(x) eq_ricker(tmp_alpha[x], 
+                                            tmp_beta[x], 
                                             U = 0)$Smsy_sum)
   
   # Get equilibrium initial recruitment
@@ -282,6 +282,19 @@ for(i in 1:nopt){
                                 sdlog = prodCV)
 
       updateEGFlag <- ifelse(updateEG, TRUE, FALSE)
+      
+      
+      # Hi Mike.
+      # Looks like that is exactly the type of relationship we are looking for!
+      #   But are you accidently using alpha instead of ln(alpha) in the H&W 
+      #   approximation?
+      #   For stock #9 I get Smsy = 3711 using this approximation:
+      # (log(alpha[9])*(0.5-0.07*log(alpha[9])))/beta[9]
+      # And Smsy = 3718 using the Scheuerell (2016) exact solution:
+      #   library("gsl")
+      # (1−lambert_W0(exp(1 - alpha[9]))) / beta[9]
+      # bc
+      
       
       
     }else{
