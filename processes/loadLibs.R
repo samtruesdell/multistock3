@@ -7,5 +7,6 @@ library(tmvtnorm)
 library(msm)
 library(EnvStats)
 library(forcats)
+library(gsl)
 
 
