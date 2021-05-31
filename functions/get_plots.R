@@ -76,6 +76,7 @@ get_plots <- function(res, pth){
               meanE = mean(meanE),
               meanPctOF = mean(pctOF),
               meanPctEX = mean(pctEX),
+              meanSmsyBias = mean(meanSmsyBias),
               .groups = 'drop') %>%
     group_by(nweir, nstockSamp) %>%
     summarize(maxMeanRun = meanRun[which.max(meanH)],
@@ -83,6 +84,7 @@ get_plots <- function(res, pth){
               maxMeanE = meanE[which.max(meanH)],
               maxMeanPctOF = meanPctOF[which.max(meanH)],
               maxMeanPctEX = meanPctEX[which.max(meanH)],
+              maxmeanSmsyBias = meanSmsyBias[which.max(meanH)],
               .groups = 'drop')
 
 
@@ -118,14 +120,20 @@ get_plots <- function(res, pth){
     geom_tile() +
     tileColP +
     ggtitle('Percent extirpated')
+
+  SmsyBiasTile <- tileDat %>%
+    ggplot(aes(x = nstockSamp, y = nweir, fill = maxmeanSmsyBias)) +
+    geom_tile() +
+    tileColP +
+    ggtitle('Percent bias in Smsy (mean trimmed by 10%)')
+    
   
   
-  
-  # Average Smsy
-  meanSmsy <- res %>%
-    ggplot(aes(y = meanSmsy, x=nstockSampTxt, fill = factor(nweirTxt))) +
+  # Average Smsy bias
+  meanSmsyBias <- res %>%
+    ggplot(aes(y = meanSmsyBias, x=nstockSampTxt, fill = factor(nweirTxt))) +
     geom_col(position = 'dodge') +
-    ggtitle('Average Smsy')
+    ggtitle('Average Smsy bias (trim = 0.1)')
   
   
   # Average harvest
@@ -158,8 +166,8 @@ get_plots <- function(res, pth){
          plot = pover)
   ggsave(filename = file.path(pth, 'pextr.png'),
          plot = pextr)
-  ggsave(filename = file.path(pth, 'meanSmsy.png'),
-         plot = meanSmsy)
+  ggsave(filename = file.path(pth, 'meanSmsyBias.png'),
+         plot = meanSmsyBias)
   ggsave(filename = file.path(pth, 'meanH.png'),
          plot = meanH)
   ggsave(filename = file.path(pth, 'meanRun.png'),
@@ -174,6 +182,8 @@ get_plots <- function(res, pth){
          plot = pctOFTile)
   ggsave(filename = file.path(pth, 'pctEXTile.png'),
          plot = pctEXTile)
+  ggsave(filename = file.path(pth, 'SmsyBiasTile.png'),
+         plot = SmsyBiasTile)
   
   
 }
