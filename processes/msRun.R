@@ -104,7 +104,8 @@ for(i in 1:nopt){
   N0 <- get_initN(alpha = tmp_alpha, beta = tmp_beta)
   N[1:nage,1:nage,] <- sapply(N0, function(x) rep(x * pReturn, each = nage))
   
-  # Get true Smsys
+  # Get true Smsys. Though this is "sum" each entry is one stock ...
+  # wanting to calculate individually for use below.
   Smsy_true <- sapply(1:nrow(tmp_stpar), 
                       function(x) eq_ricker(tmp_alpha[x], 
                                             tmp_beta[x], 
@@ -176,7 +177,7 @@ for(i in 1:nopt){
     }
 
     # Harvest rate including implementation error
-    UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]) - oe_u^2/2, sdlog = oe_U, 
+    UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]) - oe_U^2/2, sdlog = oe_U, 
                            min = 0, max = 1)
     
     # Loop over stocks
@@ -263,10 +264,15 @@ for(i in 1:nopt){
 # calc Smsy ---------------------------------------------------------------
 # test ----
 # 
-    
+   ### Something not right ... Smsys should be closer... 
       # Calculate Smsy
       # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
       SmsyEst[y+1] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
+      # SmsyEst[y+1] <- (1 - lambert_W0(exp(1 - aprime))) / bprime
+
+      # cat('\n+++++++++++\n',
+      #     log(aprime) / bprime * (0.5 - 0.07 * log(aprime)),
+      #     '\n', (1-lambert_W0(exp(1 - aprime))) / bprime)
 
       # hmmmmmmm occasional negative estimates of Smsy.      
       if(SmsyEst[y+1] < 0){
@@ -343,6 +349,11 @@ for(i in 1:nopt){
   Smsy2save <- SmsyScaled[yrs2save]
   meanSmsy[i] <- mean(Smsy2save, trim = 0.1)
   
+  # Bias in Smsy
+  basinSmsy <- eq_ricker(tmp_alpha, tmp_beta, U = 0)$Smsy_sum
+  SmsyBias2save <- (SmsyEst[yrs2save] * basinExp - basinSmsy) / basinSmsy
+  meanSmsyBias[i] <- mean(SmsyBias2save, trim = 0.1)
+  
   # Overall percent overfished
   OF2save <- OF[yrs2save,]
   pctOF[i] <- sum(OF2save) / (nrow(OF2save) * ncol(OF2save))
@@ -364,7 +375,7 @@ for(i in 1:nopt){
 
 
 # Compile results
-res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsy, pctOF, pctEX) %>%
+res <- cbind(opt, sampDsn[opt$s2s,], meanRun, meanH, meanSmsyBias, pctOF, pctEX) %>%
   as.data.frame() %>%
   as_tibble() %>%
   rowwise() %>%
