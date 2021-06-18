@@ -9,7 +9,7 @@ nySRMod <- c(30)
 
 
 # number of stocks to be monitored
-ns_low <- c(4)
+ns_low <- c(2,3,4)
 ns_med <- c(5)
 ns_high <- c(4)
 
