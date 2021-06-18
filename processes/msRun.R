@@ -14,14 +14,15 @@ sapply(funLst, source)
 source('processes/get_scenariosObject.R')
 
 nScenarios <- max(sparLen)
-for(s in 1:nScenarios){
+resLst <- list()
+for(sc in 1:nScenarios){
 
   # Calculate some variables to use later
   nage <- length(pReturn)
-  ns <- ns_high[s] + ns_med[s] + ns_low[s]
+  ns <- ns_high[sc] + ns_med[sc] + ns_low[sc]
   
   # updated number of years to include spin up
-  ny2 <- ny + nySpin + nage
+  ny2 <- ny[sc] + nySpin[sc] + nage
   # Spin up n years before running the model
   # nySpinFit <- nySpin + nyFit
   
@@ -30,12 +31,12 @@ for(s in 1:nScenarios){
   # names(stocks2sample) <- paste0('stock', 1:ns)
   
   # Determine sampling scheme -- matrix is 0 for unsampled and CV otherwise
-  sampDsn <- expand.grid(replicate(ns, c(0,cvA,cvW), simplify = FALSE))
+  sampDsn <- expand.grid(replicate(ns, c(0,cvA[sc],cvW[sc]), simplify = FALSE))
   
   
   # Remove cases where there are no weirs sampled
   # removeIdx <- apply(sampDsn, 1, sum) %% cvAW[1] == 0
-  removeIdx <- apply(sampDsn, 1, function(x) length(x[x==cvW])) == 0
+  removeIdx <- apply(sampDsn, 1, function(x) length(x[x==cvW[sc]])) == 0
   sampDsn <- sampDsn[!removeIdx,]
   names(sampDsn) <- paste0('stock', 1:ns)
   
@@ -47,10 +48,10 @@ for(s in 1:nScenarios){
   
   # Determine alpha and beta values for each of the reps
   stpar <- list()
-  for(i in 1:nrep){
-    stpar[[i]] <- get_stockPar(nh = ns_high[s], 
-                               nm = ns_med[s], 
-                               nl = ns_low[s], 
+  for(i in 1:nrep[sc]){
+    stpar[[i]] <- get_stockPar(nh = ns_high[sc], 
+                               nm = ns_med[sc], 
+                               nl = ns_low[sc], 
                                ab = abounds, bb = bbounds)
   }
   
@@ -60,7 +61,7 @@ for(s in 1:nScenarios){
   sampDsn2 <- sampDsn
   
   ## Assign weir values to 100 to help identify unique types of sampling
-  sampDsn2[sampDsn2 == cvW] <- 100
+  sampDsn2[sampDsn2 == cvW[sc]] <- 100
   rs <- apply(sampDsn2, 1, sum) # really there are length(unique(rs)) types
   
   ## Find the unique types of weir/aerial combinations
@@ -74,7 +75,7 @@ for(s in 1:nScenarios){
   ## Would rather not use replacement but I think it just doesn't matter.
   sampDsnIdx <- unlist(lapply(rowNumLst, 
                               function(x){
-                                x[sample(length(x), size = nrep, replace = TRUE)]
+                                x[sample(length(x), size = nrep[sc], replace = TRUE)]
                               }))
   
   # Create a new design matrix
@@ -82,7 +83,7 @@ for(s in 1:nScenarios){
   
   # Grid of options. Repeating options that were sampled before ... but does it 
   # even matter if they are equivalent???
-  opt <- expand.grid(n = 1,#:nrep, ... nrep in the dsn matrix??
+  opt <- expand.grid(n = 1,#:nrep[s], ... nrep[s] in the dsn matrix??
                      s2s = 1:nrow(sampDsn),
                      egs = egscalar)
   
@@ -126,7 +127,7 @@ for(s in 1:nScenarios){
     
     
     # Initial escapement-at-age and total escapement (0.25 initial U)
-    UTmp <- rtnorm(nage, initUMean, initUSD, lower = 0, upper = 1)
+    UTmp <- rtnorm(nage, initUMean[sc], initUSD[sc], lower = 0, upper = 1)
     UtmpArr <- array(data = UTmp, dim = c(nage, nage, ns))
     S[1:nage,,] <- Run[1:nage,,] * (1 - UtmpArr)
     Stot[1:nage,] <- apply(S[1:nage,,], c(1,3), sum)
@@ -165,13 +166,13 @@ for(s in 1:nScenarios){
   
       # Pre-season run estimate
       runEst[y] <- rlnorm(1, mean = log(sum(apply(Run[y,,], 1, sum))) - 
-                            oe_runEst^2/2, 
-                          sd = oe_runEst)
+                            oe_runEst[sc]^2/2, 
+                          sd = oe_runEst[sc])
       
       
       # Harvest rate for year y
-      if(y < (nySpin + nage)){ # If there is not yet an EG, make random
-        U[y] <- rtnorm(1, mean = initUMean, sd = initUSD, lower = 0, upper = 1)
+      if(y < (nySpin[sc] + nage)){ # If there is not yet an EG, make random
+        U[y] <- rtnorm(1, mean = initUMean[sc], sd = initUSD[sc], lower = 0, upper = 1)
         ## -- change the harvest intensity for the initial model -- ##
       }else{
         if(runEst[y] >= EG[y]){                   # if est run is larger than EG
@@ -182,7 +183,7 @@ for(s in 1:nScenarios){
       }
   
       # Harvest rate including implementation error
-      UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]) - oe_U^2/2, sdlog = oe_U, 
+      UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]) - oe_U[sc]^2/2, sdlog = oe_U[sc], 
                              min = 0, max = 1)
       
       # Loop over stocks
@@ -218,7 +219,7 @@ for(s in 1:nScenarios){
         
         # Escapement proportions-at-age observed with error (assumes that catch
         # and escapement are estimated from the same samples)
-        paa_oeNTemp <- c(rmultinom(n = 1, size = oe_paaS, prob = S[y,,s]))
+        paa_oeNTemp <- c(rmultinom(n = 1, size = oe_paaS[sc], prob = S[y,,s]))
         paa_oe[y,,s] <- paa_oeNTemp / sum(paa_oeNTemp)
         
         # Calculate the observed run size
@@ -239,14 +240,14 @@ for(s in 1:nScenarios){
       
       # Fit the assessment model
       ## -- ensure that n years have passed before if updateEGFlag == FALSE -- ##
-      if(y > nySRMod + nage & updateEGFlag){
+      if(y > nySRMod[sc] + nage & updateEGFlag){
   
         # Get the appropriate number of years used to fit the assessment model
         # (from the end of the data set)
         s2sCol <- which(sampDsn[opt$s2s[i],] > 0)
         
         # Observed stock and recruits to feed into the model
-        yrs2use <- (y-(nySRMod-1)):(y-nage)
+        yrs2use <- (y-(nySRMod[sc]-1)):(y-nage)
         R_lm <- apply(R_oe[yrs2use, s2sCol, drop = FALSE], 1, sum)
         S_lm <- apply(Stot_oe[yrs2use, s2sCol, drop = FALSE], 1, sum)
         
@@ -374,18 +375,20 @@ for(s in 1:nScenarios){
     rModRecord <- rMod
     
     marks <- floor(seq(1, nrow(opt), length.out = 10))
-    if(i %in% marks) cat(round(i / nrow(opt) * 100), '%', '\n', sep = '')
+    if(i %in% marks) cat('s', sc, '/', nScenarios, ': ', 
+                         round(i / nrow(opt) * 100), '%', '\n', 
+                         sep = '')
     
   } # close i (options loop)
   
   
   # Compile results
-  resLst[[s]] <- cbind(opt, sampDsn[opt$s2s,], 
+  resLst[[sc]] <- cbind(opt, sampDsn[opt$s2s,], 
                        meanRun, meanH, meanSmsyBias, pctOF, pctEX) %>%
     as.data.frame() %>%
     as_tibble() %>%
     rowwise() %>%
-    mutate(nweir = sum(across(starts_with('stock')) == cvW),
+    mutate(nweir = sum(across(starts_with('stock')) == cvW[sc]),
            nstockSamp = sum(across(starts_with('stock')) > 0),
            propWeir = nweir / nstockSamp) %>%
     ungroup() %>%
@@ -393,7 +396,8 @@ for(s in 1:nScenarios){
            nstockSampTxt = paste('nstockSamp:', nstockSamp),
            nweirTxt = fct_reorder(nweirTxt, nweir),
            nstockSampTxt = fct_reorder(nstockSampTxt, nstockSamp),
-           meanE = meanRun - meanH)
+           meanE = meanRun - meanH,
+           scenario = sc)
 }
 
 res <- bind_rows(resLst)

@@ -1,6 +1,8 @@
 ---
 title: "Run summary"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -17,16 +19,35 @@ parFile <- paste(readLines('../parameters/msPar.R'), collapse = '\n')
 ```
 
 
+## Table of scenarios
+Parameters that vary by scenario are highlighted in the table below
+```{r}
+tabDat <- scenLst %>% 
+  bind_rows() %>% 
+  t() %>% 
+  as_tibble(.name_repair = 'unique', rownames = 'variable') %>%
+  rename(scenario1 = 2, scenario2 = 3, scenario3 = 4)
+
+varRow <- sapply(1:nrow(tabDat), function(x) 
+  ifelse(all(unlist(tabDat[x,2:nScenarios]) == unlist(tabDat[x,2])), 0, 1))
+wVarRow <- which(varRow == 1)
+
+kable(tabDat) %>%
+  kable_classic(full_width = FALSE) %>%
+  row_spec(wVarRow, background = 'cornflowerblue')
+```
+
+
 ## Results
 
-![](`r file.path(rmdFigPath, 'hr_stocks.png')`)
-![](`r file.path(rmdFigPath, 'hr_weirs.png')`)
-![](`r file.path(rmdFigPath, 'hr_stocksWeirs.png')`)
+<!-- ![](`r file.path(rmdFigPath, 'hr_stocks.png')`) -->
+<!-- ![](`r file.path(rmdFigPath, 'hr_weirs.png')`) -->
+<!-- ![](`r file.path(rmdFigPath, 'hr_stocksWeirs.png')`) -->
 <!-- ![](`r file.path(rmdFigPath, 'meanH.png')`) -->
 <!-- ![](`r file.path(rmdFigPath, 'meanRun.png')`) -->
-![](`r file.path(rmdFigPath, 'pextr.png')`)
-![](`r file.path(rmdFigPath, 'pover.png')`)
-![](`r file.path(rmdFigPath, 'hTile.png')`)
+<!-- ![](`r file.path(rmdFigPath, 'pextr.png')`) -->
+<!-- ![](`r file.path(rmdFigPath, 'pover.png')`) -->
+<!-- ![](`r file.path(rmdFigPath, 'hTile.png')`) -->
 ![](`r file.path(rmdFigPath, 'runTile.png')`)
 ![](`r file.path(rmdFigPath, 'eTile.png')`)
 ![](`r file.path(rmdFigPath, 'pctOFTile.png')`)
