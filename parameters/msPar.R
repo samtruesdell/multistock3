@@ -2,16 +2,16 @@
 
 
 # number of repetitions
-nrep <- 3
+nrep <- c(3)
 
 # number of years in the SR model
-nySRMod <- 30
+nySRMod <- c(30)
 
 
 # number of stocks to be monitored
-ns_low <- 4
-ns_med <- 5
-ns_high <- 4
+ns_low <- c(4)
+ns_med <- c(5)
+ns_high <- c(4)
 
 # Levels for alphas and betas
 abounds <- matrix(c(5, 8,
@@ -25,36 +25,36 @@ bbounds <- matrix(c(0.001, 0.003,
                   nrow = 3, byrow = TRUE)
 
 # number of management simulation years
-ny <- 50
+ny <- c(50)
 
 # Number of initial simulation years before model fitting
-nySpin <- 25
+nySpin <- c(25)
 
 # Number of years to use to fit the Ricker model used in management
 # nyFit <- 30
 
 # Initial U
-initUMean <- 0.8
-initUSD <- 0.1
+initUMean <- c(0.5, 0.75, 0.85)
+initUSD <- c(0.1)
 
-# CVs for aerial surveys [1] and weirs [2] and ESS for weirs
-# and correlations btw aerial surveys and weirs
-cvAW <- c(1, 0.01)
+# CVs for aerial surveys and weirs
+cvA <- c(0.5)
+cvW <- c(0.1)
 
 # SD for run size estimate
-oe_runEst <- 0.1
+oe_runEst <- c(0.1)
 
 
-oe_paaS <- 50
+oe_paaS <- c(50)
 # oe_catch <- 0.1
-oe_U <- 0.1
+oe_U <- c(0.1)
 # oe_S <- 0.1
 
 # CV for the harvest of every stock
 # cvH <- 0.02
 
 # escapement goal scalars
-egscalar <- seq(from = 0.01, to = 2, length.out = 30)
+egscalar <- 1#seq(from = 0.01, to = 2, length.out = 30)
 
 # # number of repetitions to average the results over for each combination
 # # of mType and EG
