@@ -1,7 +1,7 @@
 ---
 title: "Run summary"
 output: html_document
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -22,13 +22,13 @@ parFile <- paste(readLines('../parameters/msPar.R'), collapse = '\n')
 ## Table of scenarios
 Parameters that vary by scenario are highlighted in the table below
 ```{r echo = FALSE, message = FALSE}
-tabDat <- scenLst %>% 
-  bind_rows() %>% 
-  t() %>% 
+tabDat <- scenLst %>%
+  bind_rows() %>%
+  t() %>%
   as_tibble(.name_repair = 'unique', rownames = 'variable') %>%
   rename(scenario1 = 2, scenario2 = 3, scenario3 = 4)
 
-varRow <- sapply(1:nrow(tabDat), function(x) 
+varRow <- sapply(1:nrow(tabDat), function(x)
   ifelse(all(unlist(tabDat[x,2:nScenarios]) == unlist(tabDat[x,2])), 0, 1))
 wVarRow <- which(varRow == 1)
 
@@ -53,5 +53,3 @@ kable(tabDat) %>%
 ![](`r file.path(rmdFigPath, 'pctOFTile.png')`)
 ![](`r file.path(rmdFigPath, 'pctEXTile.png')`)
 <!-- ![](`r file.path(rmdFigPath, 'meanSmsy.png')`) -->
-
-
