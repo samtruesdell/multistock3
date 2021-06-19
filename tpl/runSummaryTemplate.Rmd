@@ -21,7 +21,7 @@ parFile <- paste(readLines('../parameters/msPar.R'), collapse = '\n')
 
 ## Table of scenarios
 Parameters that vary by scenario are highlighted in the table below
-```{r}
+```{r echo = FALSE, message = FALSE}
 tabDat <- scenLst %>% 
   bind_rows() %>% 
   t() %>% 
@@ -47,7 +47,7 @@ kable(tabDat) %>%
 <!-- ![](`r file.path(rmdFigPath, 'meanRun.png')`) -->
 <!-- ![](`r file.path(rmdFigPath, 'pextr.png')`) -->
 <!-- ![](`r file.path(rmdFigPath, 'pover.png')`) -->
-<!-- ![](`r file.path(rmdFigPath, 'hTile.png')`) -->
+![](`r file.path(rmdFigPath, 'hTile.png')`)
 ![](`r file.path(rmdFigPath, 'runTile.png')`)
 ![](`r file.path(rmdFigPath, 'eTile.png')`)
 ![](`r file.path(rmdFigPath, 'pctOFTile.png')`)
