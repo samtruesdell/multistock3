@@ -8,5 +8,6 @@ library(msm)
 library(EnvStats)
 library(forcats)
 library(gsl)
+library(kableExtra)
 
 
