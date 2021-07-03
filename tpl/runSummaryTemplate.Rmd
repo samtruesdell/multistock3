@@ -26,7 +26,7 @@ tabDat <- scenLst %>%
   bind_rows() %>%
   t() %>%
   as_tibble(.name_repair = 'unique', rownames = 'variable') %>%
-  rename(scenario1 = 2, scenario2 = 3, scenario3 = 4)
+  rename_with(-variable, .fn = ~ paste0('scenario', sub('...', '', .x)))
 
 varRow <- sapply(1:nrow(tabDat), function(x)
   ifelse(all(unlist(tabDat[x,2:nScenarios]) == unlist(tabDat[x,2])), 0, 1))
@@ -52,4 +52,5 @@ kable(tabDat) %>%
 ![](`r file.path(rmdFigPath, 'eTile.png')`)
 ![](`r file.path(rmdFigPath, 'pctOFTile.png')`)
 ![](`r file.path(rmdFigPath, 'pctEXTile.png')`)
+![](`r file.path(rmdFigPath, 'SmsyBiasTile.png')`)
 <!-- ![](`r file.path(rmdFigPath, 'meanSmsy.png')`) -->
