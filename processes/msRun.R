@@ -52,7 +52,7 @@ for(sc in 1:nScenarios){
     stpar[[i]] <- get_stockPar(nh = ns_high[sc], 
                                nm = ns_med[sc], 
                                nl = ns_low[sc], 
-                               ab = abounds, bb = bbounds)
+                               rickPars = rickerStockPar)
   }
   
   
