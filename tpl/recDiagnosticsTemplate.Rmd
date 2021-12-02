@@ -1,0 +1,22 @@
+---
+title: "Recruitment Diagnostics"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Recruitment diagnostics
+
+The recruitment diagnostics below contain (1) boxplots by scenario for standardized residuals aggregated across (a) number of streams sampled and (b) proportions of weirs sampled; and (2) a random selection of four sets of stock recruitment data and subsequent expected recruitment for both the number of streams and the proportion of weirs separated out by scenario.
+
+
+```{r results = 'hide', echo = FALSE}
+print(recStats$boxNStock)
+print(recStats$boxNWeir)
+lapply(recStats$weirRecPlot, print)
+```
+
+
+
