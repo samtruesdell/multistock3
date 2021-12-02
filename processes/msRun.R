@@ -13,6 +13,9 @@ sapply(funLst, source)
 # Extend the parameters for use in scenario loop
 source('processes/get_scenariosObject.R')
 
+rModRecordList <- list()
+rmi_inc <- 1
+
 nScenarios <- max(sparLen)
 resLst <- list()
 for(sc in 1:nScenarios){
@@ -75,7 +78,8 @@ for(sc in 1:nScenarios){
   ## Would rather not use replacement but I think it just doesn't matter.
   sampDsnIdx <- unlist(lapply(rowNumLst, 
                               function(x){
-                                x[sample(length(x), size = nrep[sc], replace = TRUE)]
+                                x[sample(length(x), size = nrep[sc], 
+                                         replace = TRUE)]
                               }))
   
   # Create a new design matrix
@@ -183,7 +187,8 @@ for(sc in 1:nScenarios){
       }
   
       # Harvest rate including implementation error
-      UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]) - oe_U[sc]^2/2, sdlog = oe_U[sc], 
+      UImp[y] <- rlnormTrunc(1, meanlog = log(U[y]) - oe_U[sc]^2/2, 
+                             sdlog = oe_U[sc], 
                              min = 0, max = 1)
       
       # Loop over stocks
@@ -235,12 +240,12 @@ for(sc in 1:nScenarios){
         
         
         
-      } # close s
+      } # close s (stocks)
       
       
       # Fit the assessment model
       ## -- ensure that n years have passed before if updateEGFlag == FALSE -- ##
-      if(y > nySRMod[sc] + nage & updateEGFlag){
+      if((y > nySRMod[sc] + nage) & updateEGFlag){
   
         # Get the appropriate number of years used to fit the assessment model
         # (from the end of the data set)
@@ -264,15 +269,19 @@ for(sc in 1:nScenarios){
         sdR <- summary(SRlm)$sigma
         aprime <- abase + sdR^2/2
         bprime <- aprime / abase * bbase
-        rMod[[y]] <- list(R_lm = R_lm, S_lm = S_lm,
-                          aprime = aprime, bprime = bprime)
+
+        rModRecordList[[rmi_inc]] <- tibble(
+          scenario = sc, s2s = opt$s2s[i], egs = opt$egs[i], y = y,
+          R_lm = R_lm, S_lm = S_lm, 
+          aprime = aprime, bprime = bprime
+        )
+        rmi_inc <- rmi_inc + 1
   
   # calc Smsy ---------------------------------------------------------------
   # test ----
   # 
      ### Something not right ... Smsys should be closer... 
         # Calculate Smsy
-        # Smsy[y,s] <- bprime * (0.5 - 0.07 * aprime)
         SmsyEst[y+1] <- log(aprime) / bprime * (0.5 - 0.07 * log(aprime))
         # SmsyEst[y+1] <- (1 - lambert_W0(exp(1 - aprime))) / bprime
   
@@ -280,15 +289,18 @@ for(sc in 1:nScenarios){
         #     log(aprime) / bprime * (0.5 - 0.07 * log(aprime)),
         #     '\n', (1-lambert_W0(exp(1 - aprime))) / bprime)
   
-        # hmmmmmmm occasional negative estimates of Smsy.      
+        # occasional negative estimates of Smsy.      
         if(SmsyEst[y+1] < 0){
           SmsyEst[y+1] <- SmsyEst[y]
           cat('... negative estimate of Smsy -- Smsy[i] <- Smsy[i-1] ...\n')
         }
         ## Determine the expansion factor for [stocks sampled]:[stocks in basin]
         # Stock sample ratio
+        # -- recalculate maximum by varying fishing rate across all stocks --
+        # use get_basinSmsy??
         ssr <- sum(Smsy_true[s2sCol]) / sum(Smsy_true)
         basinExp <- 1/ssr
+        # --------------------------------------------------- #
         
         # Calculate the CV of expanded productivity estimate
         prodCV <- get_prodCV(K = 8.5, b = 1000, p = ssr)
@@ -333,7 +345,7 @@ for(sc in 1:nScenarios){
       EX[y,] <- seqOut['EX',]
       
       
-    } # close y
+    } # close y (year)
     
     ## Save performance metrics
     
@@ -356,7 +368,8 @@ for(sc in 1:nScenarios){
     meanSmsy[i] <- mean(Smsy2save, trim = 0.1)
     
     # Bias in Smsy
-    basinSmsy <- eq_ricker(tmp_alpha, tmp_beta, U = 0)$Smsy_sum
+    # basinSmsy <- eq_ricker(tmp_alpha, tmp_beta, U = 0)$Smsy_sum
+    basinSmsy <- get_basinSmsy(alpha = tmp_alpha, beta = tmp_beta)
     SmsyBias2save <- (SmsyEst[yrs2save] * basinExp - basinSmsy) / basinSmsy
     meanSmsyBias[i] <- mean(SmsyBias2save, trim = 0.1)
     
@@ -370,9 +383,7 @@ for(sc in 1:nScenarios){
     
     
     
-    
-    # For recording individual SR models...
-    rModRecord <- rMod
+
     
     marks <- floor(seq(1, nrow(opt), length.out = 10))
     if(i %in% marks) cat('s', sc, '/', nScenarios, ': ', 
@@ -398,9 +409,15 @@ for(sc in 1:nScenarios){
            nstockSampTxt = fct_reorder(nstockSampTxt, nstockSamp),
            meanE = meanRun - meanH,
            scenario = sc)
-}
+} # close scenarios loop
 
 res <- bind_rows(resLst)
+rModRecord <- bind_rows(rModRecordList) %>%
+  mutate(RHat = ricker(alpha = aprime, beta = bprime, S = S_lm),
+         resid = R_lm - RHat) %>%
+  left_join(res, by = c('scenario' = 'scenario',
+                        's2s' = 's2s',
+                        'egs' = 'egs'))
 
 # Create new folder to store the results
 dir.create('results', showWarnings = FALSE)
@@ -409,14 +426,22 @@ figPath <- file.path('results', now)
 dir.create(figPath, showWarnings = FALSE)
 
 # Save the plots
-get_plots(res = res, pth = figPath)
+somePlots <- get_plots(res = res, pth = figPath)
+
+# Get recruitment stats
+recStats <- get_recStats(rec = rModRecord)
 
 # compile summary document
 rmdFigPath <- file.path('..', figPath)
 rmarkdown::render('tpl/runSummaryTemplate.Rmd')
+rmarkdown::render('tpl/recDiagnosticsTemplate.Rmd')
 
 # Copy to appropriate results directory
 file.copy(from = 'tpl/runSummaryTemplate.html',
           to = file.path(figPath, 'runSummary.html'),
-          overwrite = FALSE)
+          overwrite = TRUE)
+
+file.copy(from = 'tpl/recDiagnosticsTemplate.html',
+          to = file.path(figPath, 'recDiagnostics.html'),
+          overwrite = TRUE)
 
