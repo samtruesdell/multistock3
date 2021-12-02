@@ -67,6 +67,7 @@ get_plots <- function(res, pth){
   #   geom_line() +
   #   ggtitle('Percent extirpated')
   
+  tmean <- function(x) mean(x, trim = 0.1)
   
   # Plots of H and run by nstock and propWeir
   tileDat <- res %>%
@@ -164,8 +165,147 @@ get_plots <- function(res, pth){
     geom_col(position = 'dodge') +
     ggtitle('Average run size (trimmed mean)')
   
-
   
+  w2plot <- round(seq(1, max(res$nweir)-1, length.out = 4))
+  
+  linePlotDat <- res %>%
+    filter(nweir %in% w2plot) %>%
+    mutate(nweir = factor(nweir)) %>%
+    group_by(nstockSamp, nweir, scenario) %>%
+    summarize(meanH = tmean(meanH),
+              meanRun = tmean(meanRun),
+              meanSmsyBias = tmean(meanSmsyBias),
+              pctOF = tmean(pctOF),
+              pctEX = tmean(pctEX),
+              meanE = tmean(meanE),
+              .groups = 'drop')
+
+  lpFun <- function(x){
+    linePlotDat %>%
+      ggplot(aes_string(x = 'nstockSamp', y = x, 
+                        group = 'nweir', col = 'nweir')) +
+      geom_line() +
+      facet_wrap(vars(scenario)) +
+      ggtitle(x)
+  }
+
+
+  linePlotList <- list(
+    lpFun(x = 'meanH'),
+    lpFun(x = 'meanRun'),
+    lpFun(x = 'meanSmsyBias'),
+    lpFun(x = 'pctOF'),
+    lpFun(x = 'pctEX'),
+    lpFun(x = 'meanE')
+  )
+
+
+  # Marginal increase plots
+  mDat <- res %>%
+    mutate(naerial = nstockSamp - nweir)
+  
+  margList <- list()
+  nstock <- min(mDat$nstockSamp):(max(mDat$nstockSamp)-1)
+  for(i in 1:length(nstock)){
+   
+
+    baseSurveys <- expand.grid(nstockSamp = nstock[i], 
+                               nweir = 1:nstock[i], 
+                               naerial = 0:nstock[i]) %>%
+      rowwise() %>%
+      mutate(rs = sum(c_across(-nstockSamp))) %>%
+      ungroup() %>%
+      filter(rs == nstockSamp)
+    
+    base <- mDat %>%
+      filter(nstockSamp %in% baseSurveys$nstockSamp,
+             nweir %in% baseSurveys$nweir,
+             naerial %in% baseSurveys$naerial) %>%
+      group_by(scenario) %>%
+      summarize(meanH = tmean(meanH), meanE = tmean(meanE), 
+                meanRun = tmean(meanRun), meanSmsyBias = tmean(meanSmsyBias),
+                meanpctEx = tmean(pctEX), meanpctOF = tmean(pctOF)) %>%
+      mutate(Type = 'Base', .before = 1)
+    
+    margW <- mDat %>%
+      filter(nstockSamp %in% (baseSurveys$nstockSamp + 1),
+             nweir %in% (baseSurveys$nweir + 1),
+             naerial %in% (baseSurveys$naerial)) %>%
+      group_by(scenario) %>%
+      summarize(meanH = tmean(meanH), meanE = tmean(meanE), 
+                meanRun = tmean(meanRun), meanSmsyBias = tmean(meanSmsyBias),
+                meanpctEx = tmean(pctEX), meanpctOF = tmean(pctOF)) %>%
+      mutate(Type = 'addWeir', .before = 1)
+    
+    margA <- mDat %>%
+      filter(nstockSamp %in% (baseSurveys$nstockSamp + 1),
+             nweir %in% (baseSurveys$nweir ),
+             naerial %in% (baseSurveys$naerial + 1)) %>%
+      group_by(scenario) %>%
+      summarize(meanH = tmean(meanH), meanE = tmean(meanE), 
+                meanRun = tmean(meanRun), meanSmsyBias = tmean(meanSmsyBias),
+                meanpctEx = tmean(pctEX), meanpctOF = tmean(pctOF)) %>%
+      mutate(Type = 'addAerial', .before = 1)
+    
+    margList[[i]] <- bind_rows(base, margW, margA) %>%
+      mutate(nStockSamp = i, .before = 3)
+     
+  }
+  marg <- bind_rows(margList) %>%
+    mutate(Type = factor(Type, levels = c('Base', 'addAerial', 'addWeir')))
+  
+  grps <- list(c('meanH', 'meanE'),
+               c('meanpctEx', 'meanpctOF'),
+               c('meanSmsyBias'))
+  
+  margPlots <- list()
+  inc <- 1
+  for(i in 1:max(mDat$scenario)){
+    p1 <- marg %>%
+      select(c(Type, scenario, nStockSamp, grps[[1]])) %>%
+      filter(scenario == i) %>%
+      pivot_longer(-c(Type, scenario, nStockSamp),
+                   names_to = 'Metric', values_to = 'Value') %>%
+      ggplot(aes(x = Metric, y = Value, fill = Type)) +
+      geom_col(position = 'dodge') +
+      facet_wrap(vars(nStockSamp)) +
+      ggtitle(paste('Marginal increase from base average | Scenario =', i), 
+              'Number of stocks sampled')
+    
+    p2 <- marg %>%
+      select(c(Type, scenario, nStockSamp, grps[[2]])) %>%
+      filter(scenario == i) %>%
+      pivot_longer(-c(Type, scenario, nStockSamp),
+                   names_to = 'Metric', values_to = 'Value') %>%
+      ggplot(aes(x = Metric, y = Value, fill = Type)) +
+      geom_col(position = 'dodge') +
+      facet_wrap(vars(nStockSamp)) +
+      ggtitle(paste('Marginal increase from base average | Scenario =', i), 
+              'Number of stocks sampled')
+    
+    p3 <- marg %>%
+      select(c(Type, scenario, nStockSamp, grps[[3]])) %>%
+      filter(scenario == i) %>%
+      pivot_longer(-c(Type, scenario, nStockSamp),
+                   names_to = 'Metric', values_to = 'Value') %>%
+      ggplot(aes(x = Metric, y = Value, fill = Type)) +
+      geom_col(position = 'dodge') +
+      facet_wrap(vars(nStockSamp)) +
+      ggtitle(paste('Marginal increase from base average | Scenario =', i), 
+              'Number of stocks sampled')
+    
+    margPlots[[inc]] <- p1
+    margPlots[[inc+1]] <- p2
+    margPlots[[inc+2]] <- p3
+    inc <- inc + 3
+  }
+    
+  
+  
+  
+
+  h = 8
+  w = 12
   # ggsave(filename = file.path(pth, 'hr_stocks.png'),
   #        plot = hr_stocks, height = 7, width = 12, unit = 'in')
   # ggsave(filename = file.path(pth, 'hr_weirs.png'),
@@ -183,18 +323,19 @@ get_plots <- function(res, pth){
   # ggsave(filename = file.path(pth, 'meanRun.png'),
   #        plot = meanRun)
   ggsave(filename = file.path(pth, 'hTile.png'),
-         plot = hTile)
+         plot = hTile, height = h, width = w)
   ggsave(filename = file.path(pth, 'runTile.png'),
-         plot = runTile)
+         plot = runTile, height = h, width = w)
   ggsave(filename = file.path(pth, 'eTile.png'),
-         plot = eTile)
+         plot = eTile, height = h, width = w)
   ggsave(filename = file.path(pth, 'pctOFTile.png'),
-         plot = pctOFTile)
+         plot = pctOFTile, height = h, width = w)
   ggsave(filename = file.path(pth, 'pctEXTile.png'),
-         plot = pctEXTile)
+         plot = pctEXTile, height = h, width = w)
   ggsave(filename = file.path(pth, 'SmsyBiasTile.png'),
-         plot = SmsyBiasTile)
+         plot = SmsyBiasTile, height = h, width = w)
   
+  return(list(linePlotList, margPlots))
   
 }
 
