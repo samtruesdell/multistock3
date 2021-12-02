@@ -28,9 +28,13 @@ tabDat <- scenLst %>%
   as_tibble(.name_repair = 'unique', rownames = 'variable') %>%
   rename_with(-variable, .fn = ~ paste0('scenario', sub('...', '', .x)))
 
-varRow <- sapply(1:nrow(tabDat), function(x)
-  ifelse(all(unlist(tabDat[x,2:nScenarios]) == unlist(tabDat[x,2])), 0, 1))
-wVarRow <- which(varRow == 1)
+
+varRow <- tabDat %>%
+  rowwise() %>%
+  mutate(uniqueVal = length(unique(c_across(-variable))))
+wVarRow <- which(varRow$uniqueVal > 1)
+
+
 
 kable(tabDat) %>%
   kable_classic(full_width = FALSE) %>%
@@ -54,3 +58,19 @@ kable(tabDat) %>%
 ![](`r file.path(rmdFigPath, 'pctEXTile.png')`)
 ![](`r file.path(rmdFigPath, 'SmsyBiasTile.png')`)
 <!-- ![](`r file.path(rmdFigPath, 'meanSmsy.png')`) -->
+
+
+### Line plots
+```{r results = 'hide', echo = FALSE, fig.height = 6, fig.width = 9}
+lapply(somePlots[[1]], print)
+```
+
+
+### Marginal change plots
+```{r results = 'hide', echo = FALSE, fig.height = 6, fig.width = 9}
+lapply(somePlots[[2]], print)
+```
+
+
+
+
