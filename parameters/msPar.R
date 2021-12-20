@@ -2,15 +2,15 @@
 
 
 # number of repetitions
-nrep <- c(3)
+nrep <- c(15)
 
 # number of years in the SR model
 nySRMod <- c(30)
 
 
 # number of stocks to be monitored
-ns_low <- c(2,3,4)
-ns_med <- c(5)
+ns_low <- c(0)
+ns_med <- c(0)
 ns_high <- c(4)
 
 # Levels for alphas and betas
@@ -34,8 +34,8 @@ nySpin <- c(25)
 # nyFit <- 30
 
 # Initial U
-initUMean <- c(0.5, 0.75, 0.85)
-initUSD <- c(0.1)
+initUMean <- c(0.5)
+initUSD <- c(0.2)
 
 # CVs for aerial surveys and weirs
 cvA <- c(0.5)
