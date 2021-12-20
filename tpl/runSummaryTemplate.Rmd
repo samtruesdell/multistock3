@@ -27,6 +27,7 @@ tabDat <- scenLst %>%
   t() %>%
   as_tibble(.name_repair = 'unique', rownames = 'variable') %>%
   rename_with(-variable, .fn = ~ paste0('scenario', sub('...', '', .x)))
+  
 
 
 varRow <- tabDat %>%
@@ -35,8 +36,23 @@ varRow <- tabDat %>%
 wVarRow <- which(varRow$uniqueVal > 1)
 
 
-
-kable(tabDat) %>%
+tabDat %>%
+  mutate(Description = c(
+    'Number of times to repeat the analysis (including scenario variability)',
+    'Number of sampling years used to develop the stock-recruit model',
+    'Number of low-productivity stocks',
+    'Number of medium-productivity stocks',
+    'Number of high-productivity stocks',
+    'Number of years to carry out each simulation (not including burn-in)',
+    'Number of burn-in years for each simulation',
+    'Initial exploitation rate mean during data generating period for stock-recruit model',
+    'Initial exploitation rate SD during data generation period for stock-recruit model',
+    'CV associated with aerial surveys',
+    'CV associated with weir surveys',
+    'Lognormal standard deviation associated with run size estimates',
+    'Multinomial effective sample size associated with stock samples',
+    'Lognormal standard deviation associated with harvest rate during data generation period (distribution truncated at 0 and 1)')) %>%
+  kableExtra::kable(escape = FALSE) %>%
   kable_classic(full_width = FALSE) %>%
   row_spec(wVarRow, background = 'cornflowerblue')
 ```
