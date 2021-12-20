@@ -173,30 +173,43 @@ get_plots <- function(res, pth){
     mutate(nweir = factor(nweir)) %>%
     group_by(nstockSamp, nweir, scenario) %>%
     summarize(meanH = tmean(meanH),
+              sdH = sqrt((1/n())^2 * sum(sdH^2)),
               meanRun = tmean(meanRun),
+              sdRun = sqrt((1/n())^2 * sum(sdRun^2)),
               meanSmsyBias = tmean(meanSmsyBias),
+              sdSmsyBias = sqrt((1/n())^2 * sum(sdSmsyBias^2)),
               pctOF = tmean(pctOF),
+              sdpctOF = sqrt((1/n())^2 * sum(sdpctOF^2)),
               pctEX = tmean(pctEX),
+              sdpctEX = sqrt((1/n())^2 * sum(sdpctEX^2)),
               meanE = tmean(meanE),
+              sdE = NA,
+              sdE = sqrt((1/n())^2 * sum(sdE^2)),
               .groups = 'drop')
 
-  lpFun <- function(x){
+  lpFun <- function(x, sdx){
     linePlotDat %>%
-      ggplot(aes_string(x = 'nstockSamp', y = x, 
-                        group = 'nweir', col = 'nweir')) +
-      geom_line() +
+      select(all_of(c(x, sdx)), nstockSamp, nweir, scenario) %>%
+      rename(x = 1, sdx = 2) %>%
+      ggplot(aes(x = nstockSamp, y = x,
+                 ymin = x - sdx, ymax = x + sdx,
+                 group = nweir, col = nweir)) +
+      geom_linerange(position = position_dodge(width = 0.25)) +
+      geom_point(position = position_dodge(width = 0.25)) +
+      geom_line(position = position_dodge(width = 0.25),
+                linetype = 'dotted', alpha = 0.75) +
       facet_wrap(vars(scenario)) +
       ggtitle(x)
   }
 
 
   linePlotList <- list(
-    lpFun(x = 'meanH'),
-    lpFun(x = 'meanRun'),
-    lpFun(x = 'meanSmsyBias'),
-    lpFun(x = 'pctOF'),
-    lpFun(x = 'pctEX'),
-    lpFun(x = 'meanE')
+    lpFun(x = 'meanH', sdx = 'sdH'),
+    lpFun(x = 'meanRun', sdx = 'sdRun'),
+    lpFun(x = 'meanSmsyBias', sdx = 'sdSmsyBias'),
+    lpFun(x = 'pctOF', sdx = 'sdpctOF'),
+    lpFun(x = 'pctEX', sdx = 'sdpctEX'),
+    lpFun(x = 'meanE', sdx = 'sdE')
   )
 
 

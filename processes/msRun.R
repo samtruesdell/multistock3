@@ -354,32 +354,39 @@ for(sc in 1:nScenarios){
     # Average run size
     run2save <- apply(Run[yrs2save,,], 1, sum)
     meanRun[i] <- mean(run2save)
+    sdRun[i] <- sd(run2save)
     
     # Average spawning stock size
     S2save <- apply(S[yrs2save,,], 1, sum)
     meanS[i] <- mean(S2save)
+    sdS[i] <- sd(S2save)
     
     # Average harvest
     h2save <- apply(Ctot[yrs2save,], 1, sum)
     meanH[i] <- mean(h2save)
+    sdH[i] <- sd(h2save)
     
     # Average estiamted Smsy
     Smsy2save <- SmsyScaled[yrs2save]
     meanSmsy[i] <- mean(Smsy2save, trim = 0.1)
+    sdSmsy[i] <- sd(Smsy2save)
     
     # Bias in Smsy
     # basinSmsy <- eq_ricker(tmp_alpha, tmp_beta, U = 0)$Smsy_sum
     basinSmsy <- get_basinSmsy(alpha = tmp_alpha, beta = tmp_beta)
     SmsyBias2save <- (SmsyEst[yrs2save] * basinExp - basinSmsy) / basinSmsy
     meanSmsyBias[i] <- mean(SmsyBias2save, trim = 0.1)
-    
+    sdSmsyBias[i] <- sd(SmsyBias2save)
+   
     # Overall percent overfished
     OF2save <- OF[yrs2save,]
     pctOF[i] <- sum(OF2save) / (nrow(OF2save) * ncol(OF2save))
+    sdpctOF[i] <- sqrt(pctOF[i] * (1 - pctOF[i]) / (nrow(OF2save) * ncol(OF2save)))
     
     # Overall percent extirpated
     EX2save <- EX[yrs2save,]
     pctEX[i] <- sum(EX2save) / (nrow(EX2save) * ncol(EX2save))
+    sdpctEX[i] <- sqrt(pctEX[i] * (1 - pctEX[i]) / (nrow(EX2save) * ncol(EX2save)))
     
     
     
@@ -395,7 +402,9 @@ for(sc in 1:nScenarios){
   
   # Compile results
   resLst[[sc]] <- cbind(opt, sampDsn[opt$s2s,], 
-                       meanRun, meanH, meanSmsyBias, pctOF, pctEX) %>%
+                       meanRun, sdRun, meanH, sdH,
+                       meanSmsyBias, sdSmsyBias,
+                       pctOF, sdpctOF, pctEX, sdpctEX) %>%
     as.data.frame() %>%
     as_tibble() %>%
     rowwise() %>%
