@@ -5,25 +5,47 @@
 # stocks using a matrix of alpha bounds (ab) and beta bounds (bb)
 
 
-get_stockPar <- function(nh, nm, nl, ab, bb){
+get_stockPar <- function(nh, nm, nl, rickPars){
   
-  # method to randomize alpha and beta pairs based on Brendan's original
-  # values.
-  
-  aval <- c(runif(nl, min = ab[1,1], max = ab[1,2]),
-            runif(nm, min = ab[2,1], max = ab[2,2]),
-            runif(nh, min = ab[3,1], max = ab[3,2]))
-  
-  bval <- c(runif(nl, min = bb[1,1], max = bb[1,2]),
-            runif(nm, min = bb[2,1], max = bb[2,2]),
-            runif(nh, min = bb[3,1], max = bb[3,2]))
+  vcov_mat <- cov(rickPars)
 
   
-  # Randomize the pairings of alphas and betas
-  alpha <- aval[sample(length(aval))]
-  beta <- bval[sample(length(bval))]
+  # Means for alpha and beta
+  m_alpha <- mean(rickPars$alpha)
+  m_beta <- mean(rickPars$beta)
+
+  #Generate lots of draws from the mv-norm distn
+  a_b_sample <- rtmvnorm(1000, 
+                        mean = c(m_alpha, m_beta), 
+                        sigma = vcov_mat,
+                        lower = c(1.0, -Inf) # exclude alpha < 1
+                        ) %>%
+    magrittr::set_colnames(c('alpha', 'beta'))
   
-  return(data.frame(alpha = alpha, beta = beta))
+  # Censor negative values of alpha and beta
+  trunc_sample <- subset(a_b_sample, a_b_sample[,1] > 0 & a_b_sample[,2] > 0)
+  
+  # create three sub-samples of alpha, beta pairs for low, med and high 
+  # productivity stocks, using quantiles
+  prod_cuts <- quantile(trunc_sample[,1], c(.33,.67))
+  
+  low_prod <- subset(trunc_sample, trunc_sample[,1] < prod_cuts[1])
+  high_prod <- subset(trunc_sample,trunc_sample[,1] > prod_cuts[2])
+  med_prod <- subset(trunc_sample,trunc_sample[,1] > prod_cuts[1] & 
+                       trunc_sample[,1] < prod_cuts[2])
+  
+  # Subset for the number of low-med-high alpha/beta pairs
+  lowpairs <- low_prod[sample(length(low_prod[,1]),nl,replace=TRUE),] %>%
+    as_tibble()
+  medpairs <- med_prod[sample(length(med_prod[,1]),nm,replace=TRUE),] %>%
+    as_tibble()
+  highpairs <- high_prod[sample(length(high_prod[,1]),nh,replace=TRUE),] %>%
+    as_tibble()
+  
+  # Create a single object for output
+  ret <- bind_rows(lowpairs, medpairs, highpairs)
+  
+  return(ret)
   
 }
 

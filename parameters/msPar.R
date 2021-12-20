@@ -13,16 +13,12 @@ ns_low <- c(0)
 ns_med <- c(0)
 ns_high <- c(4)
 
-# Levels for alphas and betas
-abounds <- matrix(c(5, 8,
-                    3, 5,
-                    1.5,3),
-                  nrow = 3, byrow = TRUE)
-
-bbounds <- matrix(c(0.001, 0.003,
-                    0.00055, 0.001,
-                    0.0001, 0.00055),
-                  nrow = 3, byrow = TRUE)
+# alpha and beta data
+rickerStockPar <- tibble(
+  alpha = c(5.5,1.9,6.4,2.6,5.8,5.5,2.4,2.1,8.0,3.7,1.7,4.3,2.3),
+  beta = c(0.0002986,0.0001986, 0.0003486, 0.001986,
+           0.000168,0.00122,0.000131, 0.00286, 0.0001986, 0.0001986,
+           0.002095,0.000784,0.000911))
 
 # number of management simulation years
 ny <- c(50)
